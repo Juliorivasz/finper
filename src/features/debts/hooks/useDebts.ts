@@ -27,9 +27,14 @@ export function useGetDebts() {
     queryKey: ["debts"],
     queryFn: async () => {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error("No user found");
+
       const { data, error } = await supabase
         .from("debts")
         .select("*, debt_payments(*)")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw new Error(error.message);

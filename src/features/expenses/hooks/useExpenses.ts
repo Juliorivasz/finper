@@ -21,11 +21,14 @@ export function useGetCategories() {
 }
 
 export function useGetExpenses() {
-  const supabase = createClient();
-
   return useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) throw new Error("No user found");
+
       const { data, error } = await supabase
         .from("expenses")
         .select(`
@@ -36,6 +39,7 @@ export function useGetExpenses() {
             icon
           )
         `)
+        .eq("user_id", user.id)
         .order("date", { ascending: false });
 
       if (error) throw new Error(error.message);
