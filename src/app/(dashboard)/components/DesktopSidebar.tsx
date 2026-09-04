@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 export function DesktopSidebar() {
   const pathname = usePathname();
@@ -20,8 +21,13 @@ export function DesktopSidebar() {
     });
   }, []);
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
+      toast.loading("Cerrando sesión...", { id: "logout" });
+      
       const supabase = createClient();
       await supabase.auth.signOut();
       
@@ -32,10 +38,13 @@ export function DesktopSidebar() {
           .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
 
+      toast.success("Sesión cerrada", { id: "logout" });
       router.push("/");
       router.refresh();
     } catch (error) {
       console.error("Error logging out:", error);
+      toast.error("Error al cerrar sesión", { id: "logout" });
+      setIsLoggingOut(false);
     }
   };
 
@@ -103,10 +112,15 @@ export function DesktopSidebar() {
         )}
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2 w-full text-left text-muted-foreground hover:bg-red-500/10 hover:text-red-500 rounded-md transition-colors"
+          disabled={isLoggingOut}
+          className="flex items-center gap-3 px-3 py-2 w-full text-left text-muted-foreground hover:bg-red-500/10 hover:text-red-500 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LogOut className="w-5 h-5" /> 
-          Cerrar Sesión
+          {isLoggingOut ? (
+            <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <LogOut className="w-5 h-5" /> 
+          )}
+          {isLoggingOut ? "Cerrando..." : "Cerrar Sesión"}
         </button>
       </div>
     </aside>
