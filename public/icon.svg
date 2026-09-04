@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient: #2a2a2a to #050505 (top-left to bottom-right) -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a2a2a"/>
+      <stop offset="100%" stop-color="#050505"/>
+    </linearGradient>
+    
+    <!-- Text Gradient: white -> gray-400 -> white -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="50%" stop-color="#9ca3af"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Base Shape (Matches rounded-lg with border-gray-500/50 shadow-sm) -->
+  <rect x="16" y="16" width="480" height="480" rx="120" fill="url(#bg)" stroke="#6b7280" stroke-width="16" stroke-opacity="0.5"/>
+  
+  <!-- Dollar Sign (Matches text-lg font-black) -->
+  <text x="50%" y="54%" font-family="ui-sans-serif, system-ui, -apple-system, sans-serif" font-weight="900" font-size="340" fill="url(#textGrad)" text-anchor="middle" dominant-baseline="middle">
+    $
+  </text>
+</svg>
