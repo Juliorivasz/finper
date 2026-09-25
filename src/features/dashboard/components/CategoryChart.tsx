@@ -42,17 +42,17 @@ export function CategoryChart({ expenses }: { expenses: Expense[] }) {
   const data = Object.entries(grouped).map(([name, value]) => ({ name, value }));
 
   // Si no está montado, mostramos un placeholder para evitar hidratación fallida
-  if (!mounted) return <div className="h-[300px] w-full" />;
+  if (!mounted) return <div className="h-full w-full min-h-[250px]" />;
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart margin={{ top: 10, right: 10, bottom: 30, left: 10 }}>
         <Pie
           data={data}
           cx="50%"
-          cy="50%"
-          innerRadius={70}
-          outerRadius={100}
+          cy="45%"
+          innerRadius={65}
+          outerRadius={90}
           paddingAngle={4}
           dataKey="value"
           stroke="none"
@@ -73,8 +73,8 @@ export function CategoryChart({ expenses }: { expenses: Expense[] }) {
         />
         <Legend 
           verticalAlign="bottom" 
-          height={36} 
-          wrapperStyle={{ fontSize: "12px", color: "inherit" }}
+          height={30}
+          wrapperStyle={{ fontSize: "12px", color: "inherit", paddingTop: "0px" }}
         />
       </PieChart>
     </ResponsiveContainer>

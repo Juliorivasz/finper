@@ -13,6 +13,7 @@ import { useGetDebts } from "@/features/debts/hooks/useDebts";
 import { DebtForm } from "@/features/debts/components/DebtForm";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import Link from "next/link";
 
 export function DashboardContent() {
   const { data: expenses, isLoading: isExpensesLoading } = useGetExpenses();
@@ -43,13 +44,18 @@ export function DashboardContent() {
   }, [expenses]);
 
   // Calcular KPIs de Deudas
-  const { deudaTotal, deudaVencimientoTexto, entidadesConDeuda } = useMemo(() => {
-    if (!debts) return { deudaTotal: 0, deudaVencimientoTexto: "Ninguno", entidadesConDeuda: 0 };
+  const { deudaTotal, deudaTotalEsteMes, deudaVencimientoTexto, deudaVencimientoNombre, entidadesConDeuda } = useMemo(() => {
+    if (!debts) return { deudaTotal: 0, deudaTotalEsteMes: 0, deudaVencimientoTexto: "Ninguno", deudaVencimientoNombre: "", entidadesConDeuda: 0 };
 
     const pendientes = debts.filter(d => d.type === "payable");
     let totalPendiente = 0;
+    let totalEsteMes = 0;
     let nextDate: Date | null = null;
+    let nextDateNombre = "";
     let entidades = 0;
+
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
 
     pendientes.forEach(d => {
       const pagado = d.debt_payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
@@ -61,8 +67,14 @@ export function DashboardContent() {
         
         if (d.due_date) {
           const due = new Date(d.due_date);
+          
+          if (due.getMonth() === currentMonth && due.getFullYear() === currentYear) {
+            totalEsteMes += restante;
+          }
+
           if (!nextDate || due < nextDate) {
             nextDate = due;
+            nextDateNombre = d.description;
           }
         }
       }
@@ -75,7 +87,9 @@ export function DashboardContent() {
 
     return { 
       deudaTotal: totalPendiente, 
+      deudaTotalEsteMes: totalEsteMes,
       deudaVencimientoTexto: textoVencimiento,
+      deudaVencimientoNombre: nextDateNombre,
       entidadesConDeuda: entidades
     };
   }, [debts]);
@@ -150,7 +164,7 @@ export function DashboardContent() {
               {isDebtsLoading ? "..." : `$${deudaTotal.toFixed(2)}`}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Repartido en {entidadesConDeuda} registro(s)
+              Este mes: ${deudaTotalEsteMes.toFixed(2)} | Total en {entidadesConDeuda} registro(s)
             </p>
           </CardContent>
         </Card>
@@ -163,11 +177,11 @@ export function DashboardContent() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold capitalize">
-              {isDebtsLoading ? "..." : deudaVencimientoTexto}
+            <div className="text-2xl font-bold capitalize truncate" title={deudaVencimientoNombre || "Al día"}>
+              {isDebtsLoading ? "..." : (deudaVencimientoNombre || "Al día")}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {entidadesConDeuda > 0 ? "Fecha límite más cercana" : "No hay pagos urgentes"}
+              {entidadesConDeuda > 0 ? `Vence: ${deudaVencimientoTexto}` : "No hay pagos urgentes"}
             </p>
           </CardContent>
         </Card>
@@ -205,8 +219,11 @@ export function DashboardContent() {
         
         {/* Lista de Últimos Movimientos */}
         <Card className="h-[350px] flex flex-col">
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg">Últimos Movimientos</CardTitle>
+            <Link href="/expenses" className="text-xs text-primary hover:underline font-medium">
+              Ver todos &rarr;
+            </Link>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
             {isExpensesLoading ? (

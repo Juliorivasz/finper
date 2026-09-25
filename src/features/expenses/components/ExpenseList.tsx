@@ -5,19 +5,23 @@ import { useGetExpenses, useDeleteExpense } from "../hooks/useExpenses";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Search, Trash2, Loader2, CalendarIcon, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Trash2, Loader2, CalendarIcon, X, ChevronLeft, ChevronRight, Plus, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ExpenseForm } from "./ExpenseForm";
 
 const ITEMS_PER_PAGE = 8; // Mostramos 8 por página para no saturar la pantalla móvil
 
 export function ExpenseList() {
   const { data: expenses, isLoading } = useGetExpenses();
   const { mutate: deleteExpense, isPending: isDeleting } = useDeleteExpense();
+  const router = useRouter();
   
   const [searchTerm, setSearchTerm] = useState("");
   // Estado para el rango de fechas (usando react-day-picker)
@@ -27,6 +31,8 @@ export function ExpenseList() {
   });
   
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<any | null>(null);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   
   // Estado para la paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,13 +131,45 @@ export function ExpenseList() {
         </DialogContent>
       </Dialog>
 
-      {/* Barra de Herramientas (Filtros y Búsqueda) */}
+      {/* Modal de Detalles del Gasto */}
+      <Dialog open={!!selectedExpense} onOpenChange={(open) => !open && setSelectedExpense(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalle del Gasto</DialogTitle>
+          </DialogHeader>
+          {selectedExpense && (
+            <div className="space-y-4 py-4">
+              <div className="flex justify-between items-center pb-4 border-b border-border">
+                <span className="text-muted-foreground font-medium">Categoría</span>
+                <span className="font-semibold">{selectedExpense.categories?.name || "General"}</span>
+              </div>
+              <div className="flex justify-between items-center pb-4 border-b border-border">
+                <span className="text-muted-foreground font-medium">Fecha</span>
+                <span className="font-semibold">{new Date(selectedExpense.date).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between items-center pb-4 border-b border-border">
+                <span className="text-muted-foreground font-medium">Monto</span>
+                <span className="font-bold text-lg text-primary">${selectedExpense.amount.toFixed(2)}</span>
+              </div>
+              <div className="flex flex-col gap-2 pb-2">
+                <span className="text-muted-foreground font-medium">Descripción</span>
+                <p className="text-sm bg-muted/30 p-3 rounded-md">{selectedExpense.description || "Sin descripción"}</p>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setSelectedExpense(null)}>Cerrar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Acciones principales y Búsqueda */}
       <div className="flex flex-col gap-4 bg-background p-1 rounded-lg">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center w-full">
-          <div className="relative w-full md:max-w-sm">
+          <div className="relative w-full md:max-w-sm flex-1">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por categoría o descripción..."
+              placeholder="Buscar..."
               className="pl-9 bg-background w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -139,6 +177,27 @@ export function ExpenseList() {
           </div>
           
         <div className="flex flex-col sm:flex-row w-full md:w-auto items-center justify-end gap-2">
+          
+          <Button variant="outline" onClick={() => router.push("/expenses/charts")} className="w-full sm:w-auto gap-2">
+            <PieChartIcon className="h-4 w-4" />
+            Gráficos
+          </Button>
+
+          <Dialog open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto gap-2">
+                <Plus className="h-4 w-4" />
+                Nuevo Gasto
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Registrar un Gasto</DialogTitle>
+              </DialogHeader>
+              <ExpenseForm onSuccessCallback={() => setIsExpenseModalOpen(false)} />
+            </DialogContent>
+          </Dialog>
+
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-full sm:w-[260px] justify-start text-left font-normal bg-background">
@@ -219,7 +278,11 @@ export function ExpenseList() {
               </thead>
               <tbody className="divide-y divide-border bg-background">
                 {paginatedExpenses.map((expense) => (
-                  <tr key={expense.id} className="hover:bg-muted/30 transition-colors group">
+                  <tr 
+                    key={expense.id} 
+                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                    onClick={() => setSelectedExpense(expense)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {new Date(expense.date).toLocaleDateString()}
                     </td>
@@ -232,7 +295,7 @@ export function ExpenseList() {
                     <td className="px-6 py-4 font-bold text-right text-sm">
                       ${expense.amount.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <Button 
                         variant="ghost" 
                         size="icon" 
@@ -251,7 +314,11 @@ export function ExpenseList() {
             {/* --- VISTA MOBILE (LISTA DE TARJETAS) --- */}
             <div className="block md:hidden divide-y divide-border bg-background">
               {paginatedExpenses.map((expense) => (
-                <div key={expense.id} className="p-4 flex flex-col gap-3 hover:bg-muted/30 transition-colors">
+                <div 
+                  key={expense.id} 
+                  className="p-4 flex flex-col gap-3 hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={() => setSelectedExpense(expense)}
+                >
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex flex-col min-w-0">
                       <span className="font-semibold text-foreground truncate">
@@ -276,7 +343,10 @@ export function ExpenseList() {
                       variant="ghost" 
                       size="sm" 
                       className="h-8 px-3 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                      onClick={() => setExpenseToDelete(expense.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpenseToDelete(expense.id);
+                      }}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Eliminar

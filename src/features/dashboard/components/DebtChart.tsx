@@ -37,7 +37,7 @@ export function DebtChart({ debts }: { debts: Debt[] }) {
     { name: "Por Cobrar", value: porCobrar, color: "#10b981" } // Verde
   ];
 
-  if (!mounted) return <div className="h-[300px] w-full" />;
+  if (!mounted) return <div className="h-full w-full min-h-[250px]" />;
 
   // Función para acortar o formatear números muy largos (ej. $1,000,000)
   const formatYAxis = (value: number) => {
@@ -47,8 +47,8 @@ export function DebtChart({ debts }: { debts: Debt[] }) {
   };
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
         <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
         <XAxis 
           dataKey="name" 
@@ -56,7 +56,7 @@ export function DebtChart({ debts }: { debts: Debt[] }) {
           tick={{ fill: "currentColor" }} 
           axisLine={false} 
           tickLine={false}
-          dy={10}
+          dy={15}
         />
         <YAxis 
           width={80}
@@ -75,6 +75,8 @@ export function DebtChart({ debts }: { debts: Debt[] }) {
             backgroundColor: "#171717",
             color: "#fff"
           }}
+          itemStyle={{ color: "#fff" }}
+          labelStyle={{ color: "#a1a1aa" }}
         />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60}>
           {data.map((entry, index) => (
