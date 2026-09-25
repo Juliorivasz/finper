@@ -1,14 +1,19 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
 import { useGetDebts, useDeleteDebt, Debt } from "../hooks/useDebts";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Trash2, ArrowUpRight, ArrowDownRight, Plus, HandCoins, ChevronLeft, ChevronRight, History } from "lucide-react";
+import { Loader2, Trash2, ArrowUpRight, ArrowDownRight, Plus, HandCoins, ChevronLeft, ChevronRight, History, Search, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
+import { formatDistanceStrict } from "date-fns";
+import { es } from "date-fns/locale";
+import Link from "next/link";
 import { DebtForm } from "./DebtForm";
 import { PaymentForm } from "./PaymentForm";
+import { formatCurrency, parseLocalDate } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 8; // Máximo 8 por página para móvil
 
@@ -22,8 +27,11 @@ export function DebtList() {
   const [debtToPay, setDebtToPay] = useState<{ id: string; pendingAmount: number } | null>(null);
   const [debtHistoryToView, setDebtHistoryToView] = useState<Debt & { paid: number, pending: number } | null>(null);
 
-  // Estado para la paginación
+  // Estado para filtros, ordenamiento y paginación
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("due_date_asc");
 
   // Calcular totales sumando pagos
   const processedDebts = useMemo(() => {
@@ -32,13 +40,50 @@ export function DebtList() {
     return debts.map(debt => {
       // Ordenar pagos por fecha desc (más reciente primero)
       const sortedPayments = [...(debt.debt_payments || [])].sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+        parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime()
       );
       const paid = sortedPayments.reduce((sum, p) => sum + p.amount, 0);
       const pending = debt.amount - paid;
       return { ...debt, debt_payments: sortedPayments, paid, pending };
     });
   }, [debts]);
+
+  const filteredAndSortedDebts = useMemo(() => {
+    let result = [...processedDebts];
+
+    if (typeFilter !== "all") {
+      result = result.filter(d => d.type === typeFilter);
+    }
+
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      result = result.filter(d => d.description?.toLowerCase().includes(lower));
+    }
+
+    result.sort((a, b) => {
+      // Prioridad 1: Mostrar deudas pendientes antes que las saldadas
+      const aIsPending = a.pending > 0;
+      const bIsPending = b.pending > 0;
+      
+      if (aIsPending && !bIsPending) return -1;
+      if (!aIsPending && bIsPending) return 1;
+
+      // Prioridad 2: Ordenar por el criterio seleccionado
+      if (sortBy === "amount_desc") return b.pending - a.pending;
+      if (sortBy === "amount_asc") return a.pending - b.pending;
+      if (sortBy === "due_date_asc") {
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return parseLocalDate(a.due_date).getTime() - parseLocalDate(b.due_date).getTime();
+      }
+      if (sortBy === "created_desc") {
+        return new Date(b.created_at || "").getTime() - new Date(a.created_at || "").getTime();
+      }
+      return 0;
+    });
+
+    return result;
+  }, [processedDebts, typeFilter, searchTerm, sortBy]);
 
   const { porPagar, porCobrar } = processedDebts.reduce(
     (acc, debt) => {
@@ -50,8 +95,8 @@ export function DebtList() {
   );
 
   // Lógica de Paginación
-  const totalPages = Math.ceil(processedDebts.length / ITEMS_PER_PAGE);
-  const paginatedDebts = processedDebts.slice(
+  const totalPages = Math.max(1, Math.ceil(filteredAndSortedDebts.length / ITEMS_PER_PAGE));
+  const paginatedDebts = filteredAndSortedDebts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -62,7 +107,7 @@ export function DebtList() {
       onSuccess: () => {
         toast.success("Deuda eliminada correctamente");
         setDebtToDelete(null);
-        // Si borramos el último elemento de la página, regresamos una
+        // Si borramos el íºltimo elemento de la página, regresamos una
         if (paginatedDebts.length === 1 && currentPage > 1) {
           setCurrentPage(prev => prev - 1);
         }
@@ -73,6 +118,9 @@ export function DebtList() {
       },
     });
   };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   if (isLoading) {
     return <div className="text-center p-12 text-muted-foreground">Cargando tus deudas...</div>;
@@ -93,7 +141,7 @@ export function DebtList() {
             <Button variant="outline" onClick={() => setDebtToDelete(null)}>Cancelar</Button>
             <Button className="bg-red-500 hover:bg-red-600 text-white" onClick={confirmDelete} disabled={isDeleting}>
               {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-              Sí, eliminar
+              Sí­, eliminar
             </Button>
           </div>
         </DialogContent>
@@ -124,7 +172,7 @@ export function DebtList() {
           <div className="py-2 space-y-4">
             <div className="flex justify-between items-center bg-muted/20 p-3 rounded-lg border border-border">
               <span className="text-sm font-medium">{debtHistoryToView?.description}</span>
-              <span className="text-sm text-primary font-bold">Total Abonado: ${debtHistoryToView?.paid.toFixed(2)}</span>
+              <span className="text-sm text-primary font-bold">Total Abonado: ${formatCurrency(debtHistoryToView?.paid || 0)}</span>
             </div>
             
             {(!debtHistoryToView?.debt_payments || debtHistoryToView.debt_payments.length === 0) ? (
@@ -134,10 +182,10 @@ export function DebtList() {
                 {debtHistoryToView.debt_payments.map((payment) => (
                   <div key={payment.id} className="flex justify-between items-center bg-background p-3 rounded-md border border-border">
                     <span className="text-sm text-muted-foreground">
-                      {new Date(payment.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })}
+                      {parseLocalDate(payment.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
                     </span>
                     <span className="font-bold text-foreground">
-                      ${payment.amount.toFixed(2)}
+                      ${formatCurrency(payment.amount)}
                     </span>
                   </div>
                 ))}
@@ -153,7 +201,7 @@ export function DebtList() {
             <p className="text-sm font-medium text-red-500 flex items-center gap-2">
               <ArrowUpRight className="h-4 w-4" /> Yo debo (Por Pagar)
             </p>
-            <p className="text-3xl font-bold text-foreground mt-2">${porPagar.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-foreground mt-2">${formatCurrency(porPagar)}</p>
           </div>
         </Card>
         <Card className="p-6 flex items-center justify-between bg-green-500/10 border-green-500/20">
@@ -161,31 +209,87 @@ export function DebtList() {
             <p className="text-sm font-medium text-green-500 flex items-center gap-2">
               <ArrowDownRight className="h-4 w-4" /> Me deben (Por Cobrar)
             </p>
-            <p className="text-3xl font-bold text-foreground mt-2">${porCobrar.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-foreground mt-2">${formatCurrency(porCobrar)}</p>
           </div>
         </Card>
       </div>
 
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-foreground">Registro Detallado</h2>
-        <Dialog open={isNewDebtModalOpen} onOpenChange={setIsNewDebtModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" /> Registrar Deuda
+        <div className="flex gap-2">
+          <Link href="/debts/charts">
+            <Button variant="outline" className="gap-2">
+              <PieChartIcon className="h-4 w-4" /> Gráficos
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Registrar una Deuda</DialogTitle>
-            </DialogHeader>
-            <DebtForm onSuccessCallback={() => setIsNewDebtModalOpen(false)} />
-          </DialogContent>
-        </Dialog>
+          </Link>
+          <Dialog open={isNewDebtModalOpen} onOpenChange={setIsNewDebtModalOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" /> Registrar Deuda
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Registrar una Deuda</DialogTitle>
+              </DialogHeader>
+              <DebtForm onSuccessCallback={() => setIsNewDebtModalOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {processedDebts.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-xl border border-border shadow-sm">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar por descripción..." 
+              className="pl-9 bg-background"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <select
+              className="flex h-9 w-full sm:w-[160px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              value={typeFilter}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="all">Todas</option>
+              <option value="payable">Yo debo</option>
+              <option value="receivable">Me deben</option>
+            </select>
+
+            <select
+              className="flex h-9 w-full sm:w-[220px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="due_date_asc">Vencimiento (Más próximo)</option>
+              <option value="amount_desc">Monto pendiente (Mayor)</option>
+              <option value="amount_asc">Monto pendiente (Menor)</option>
+              <option value="created_desc">Fecha de registro (Nuevos)</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       {processedDebts.length === 0 ? (
         <Card className="p-12 text-center flex flex-col items-center justify-center border-dashed">
           <p className="text-muted-foreground">No tienes deudas registradas.</p>
+        </Card>
+      ) : filteredAndSortedDebts.length === 0 ? (
+        <Card className="p-12 text-center flex flex-col items-center justify-center border-dashed">
+          <p className="text-muted-foreground">No se encontraron deudas con esos filtros.</p>
         </Card>
       ) : (
         <Card className="overflow-hidden">
@@ -201,13 +305,19 @@ export function DebtList() {
                   <th className="px-6 py-4 font-medium text-center w-36">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border bg-background">
-                {paginatedDebts.map((debt) => (
-                  <tr key={debt.id} className="hover:bg-muted/30 transition-colors group">
+              <tbody className="divide-y divide-border">
+                {paginatedDebts.map((debt) => {
+                  const isOverdue = debt.pending > 0 && debt.due_date && parseLocalDate(debt.due_date) < today;
+                  return (
+                    <tr key={debt.id} className="bg-card hover:bg-muted/50 transition-colors group">
                     <td className="px-6 py-4 font-medium max-w-[200px] truncate text-sm">
                       {debt.description}
-                      <div className="text-xs text-muted-foreground mt-1 truncate">
-                        {debt.type === "payable" ? "Yo debo" : "Me deben"} • Vence: {debt.due_date ? new Date(debt.due_date).toLocaleDateString(undefined, { timeZone: 'UTC' }) : 'S/F'}
+                      <div className="text-xs mt-1 truncate flex items-center gap-1">
+                        <span className="text-muted-foreground">{debt.type === "payable" ? "Yo debo" : "Me deben"} •</span>
+                        <span className={isOverdue ? "text-red-500 font-bold" : "text-muted-foreground"}>
+                          Vence: {debt.due_date ? parseLocalDate(debt.due_date).toLocaleDateString(undefined) : 'S/F'}
+                          {isOverdue && ` (hace ${formatDistanceStrict(parseLocalDate(debt.due_date), today, { locale: es })})`}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -222,10 +332,10 @@ export function DebtList() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground text-right text-sm">
-                      ${debt.amount.toFixed(2)}
+                      ${formatCurrency(debt.amount)}
                     </td>
                     <td className="px-6 py-4 font-bold text-right text-primary text-sm">
-                      ${Math.max(0, debt.pending).toFixed(2)}
+                      ${formatCurrency(Math.max(0, debt.pending))}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -261,29 +371,36 @@ export function DebtList() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
 
             {/* --- VISTA MOBILE (LISTA DE TARJETAS) --- */}
             <div className="block md:hidden divide-y divide-border bg-background">
-              {paginatedDebts.map((debt) => (
-                <div key={debt.id} className="p-4 flex flex-col gap-4 hover:bg-muted/30 transition-colors">
+              {paginatedDebts.map((debt) => {
+                const isOverdue = debt.pending > 0 && debt.due_date && parseLocalDate(debt.due_date) < today;
+                return (
+                  <div key={debt.id} className="p-4 flex flex-col gap-4 hover:bg-muted/30 transition-colors">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex flex-col min-w-0">
                       <span className="font-semibold text-foreground truncate">
                         {debt.description}
                       </span>
-                      <span className="text-sm text-muted-foreground truncate mt-0.5">
-                        {debt.type === "payable" ? "Yo debo" : "Me deben"} • Vence: {debt.due_date ? new Date(debt.due_date).toLocaleDateString(undefined, { timeZone: 'UTC' }) : 'S/F'}
+                      <span className="text-sm truncate mt-0.5 flex gap-1 items-center">
+                        <span className="text-muted-foreground">{debt.type === "payable" ? "Yo debo" : "Me deben"} •</span>
+                        <span className={isOverdue ? "text-red-500 font-bold" : "text-muted-foreground"}>
+                          Vence: {debt.due_date ? parseLocalDate(debt.due_date).toLocaleDateString(undefined) : 'S/F'}
+                          {isOverdue && ` (hace ${formatDistanceStrict(parseLocalDate(debt.due_date), today, { locale: es })})`}
+                        </span>
                       </span>
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="font-bold text-primary whitespace-nowrap text-right text-lg leading-none">
-                        ${Math.max(0, debt.pending).toFixed(2)}
+                        ${formatCurrency(Math.max(0, debt.pending))}
                       </span>
                       <span className="text-xs text-muted-foreground mt-1">
-                        de ${debt.amount.toFixed(2)}
+                        de ${formatCurrency(debt.amount)}
                       </span>
                     </div>
                   </div>
@@ -326,7 +443,8 @@ export function DebtList() {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           </div>
           
@@ -362,3 +480,4 @@ export function DebtList() {
     </div>
   );
 }
+

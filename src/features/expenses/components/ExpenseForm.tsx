@@ -27,7 +27,7 @@ export function ExpenseForm({ onSuccessCallback }: ExpenseFormProps) {
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       amount: "" as unknown as number,
-      date: new Date().toISOString().split("T")[0],
+      date: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0],
       category_id: "",
       description: "",
       is_recurring: false,

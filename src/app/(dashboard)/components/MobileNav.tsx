@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Wallet, CreditCard, LogOut, User as UserIcon } from "lucide-react";
+import { LayoutDashboard, Wallet, CreditCard, LogOut, User as UserIcon, ArrowDownToLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
@@ -114,6 +114,16 @@ export function MobileNav() {
         >
           <LayoutDashboard className="w-5 h-5" />
           <span className="text-[10px] font-medium">Resumen</span>
+        </Link>
+        <Link 
+          href="/incomes" 
+          className={cn(
+            "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
+            pathname === "/incomes" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <ArrowDownToLine className="w-5 h-5 text-emerald-500" />
+          <span className="text-[10px] font-medium">Ingresos</span>
         </Link>
         <Link 
           href="/expenses" 

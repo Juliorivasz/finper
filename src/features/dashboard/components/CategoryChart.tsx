@@ -3,6 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useEffect, useState } from "react";
 import { Expense } from "@/features/expenses/types";
+import { formatCurrency } from "@/lib/utils";
 
 
 // Colores más vibrantes y modernos para diferenciar mejor las categorías
@@ -62,7 +63,7 @@ export function CategoryChart({ expenses }: { expenses: Expense[] }) {
           ))}
         </Pie>
         <Tooltip
-          formatter={(value) => `$${Number(value ?? 0).toFixed(2)}`}
+          formatter={(value) => `$${formatCurrency(Number(value ?? 0))}`}
           contentStyle={{ 
             borderRadius: "8px", 
             border: "1px solid #333", 

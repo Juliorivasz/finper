@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useGetExpenses, useDeleteExpense } from "../hooks/useExpenses";
+import { useGetIncomes, useDeleteIncome } from "../hooks/useIncomes";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,53 +11,46 @@ import { Calendar } from "@/components/ui/calendar";
 import { Search, Trash2, Loader2, CalendarIcon, X, ChevronLeft, ChevronRight, Plus, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { parseLocalDate } from "@/lib/utils";
 
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ExpenseForm } from "./ExpenseForm";
+import { IncomeForm } from "./IncomeForm";
+import { Income } from "../types";
+import { formatCurrency, parseLocalDate } from "@/lib/utils";
 
-const ITEMS_PER_PAGE = 8; // Mostramos 8 por página para no saturar la pantalla móvil
+const ITEMS_PER_PAGE = 8;
 
-export function ExpenseList() {
-  const { data: expenses, isLoading } = useGetExpenses();
-  const { mutate: deleteExpense, isPending: isDeleting } = useDeleteExpense();
-  const router = useRouter();
+export function IncomeList() {
+  const { data: incomes, isLoading } = useGetIncomes();
+  const { mutate: deleteIncome, isPending: isDeleting } = useDeleteIncome();
   
   const [searchTerm, setSearchTerm] = useState("");
-  // Estado para el rango de fechas (usando react-day-picker)
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
     to: undefined,
   });
   
-  const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
-  const [selectedExpense, setSelectedExpense] = useState<any | null>(null);
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [incomeToDelete, setIncomeToDelete] = useState<string | null>(null);
+  const [selectedIncome, setSelectedIncome] = useState<Income | null>(null);
+  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   
-  // Estado para la paginación
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Volver a la página 1 cada vez que cambien los filtros
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, dateRange]);
 
-  const filteredExpenses = useMemo(() => {
-    if (!expenses) return [];
+  const filteredIncomes = useMemo(() => {
+    if (!incomes) return [];
     
-    return expenses.filter(exp => {
-      // Filtro de texto
+    return incomes.filter(inc => {
       const lowerTerm = searchTerm.toLowerCase();
-      const descMatch = exp.description?.toLowerCase().includes(lowerTerm);
-      const catMatch = (exp as any).categories?.name?.toLowerCase().includes(lowerTerm);
+      const descMatch = inc.description?.toLowerCase().includes(lowerTerm);
+      const catMatch = inc.category?.toLowerCase().includes(lowerTerm);
       const textMatches = !searchTerm || descMatch || catMatch;
 
-      // Filtro de fechas con el calendario interactivo
-      const expDate = parseLocalDate(exp.date);
-      // Resetear horas para comparar días exactos
-      expDate.setHours(0, 0, 0, 0);
+      const incDate = parseLocalDate(inc.date);
+      incDate.setHours(0, 0, 0, 0);
 
       let isAfterStart = true;
       let isBeforeEnd = true;
@@ -65,62 +58,59 @@ export function ExpenseList() {
       if (dateRange.from) {
         const fromDate = new Date(dateRange.from);
         fromDate.setHours(0, 0, 0, 0);
-        isAfterStart = expDate >= fromDate;
+        isAfterStart = incDate >= fromDate;
       }
 
       if (dateRange.to) {
         const toDate = new Date(dateRange.to);
         toDate.setHours(0, 0, 0, 0);
-        isBeforeEnd = expDate <= toDate;
+        isBeforeEnd = incDate <= toDate;
       }
 
       return textMatches && isAfterStart && isBeforeEnd;
     });
-  }, [expenses, searchTerm, dateRange]);
+  }, [incomes, searchTerm, dateRange]);
 
-  // Lógica de Paginación
-  const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
-  const paginatedExpenses = filteredExpenses.slice(
+  const totalPages = Math.ceil(filteredIncomes.length / ITEMS_PER_PAGE);
+  const paginatedIncomes = filteredIncomes.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
   const confirmDelete = () => {
-    if (!expenseToDelete) return;
+    if (!incomeToDelete) return;
     
-    deleteExpense(expenseToDelete, {
+    deleteIncome(incomeToDelete, {
       onSuccess: () => {
-        toast.success("Gasto eliminado correctamente");
-        setExpenseToDelete(null);
-        // Si borramos el último elemento de la página, regresamos una
-        if (paginatedExpenses.length === 1 && currentPage > 1) {
+        toast.success("Ingreso eliminado correctamente");
+        setIncomeToDelete(null);
+        if (paginatedIncomes.length === 1 && currentPage > 1) {
           setCurrentPage(prev => prev - 1);
         }
       },
       onError: (err) => {
         toast.error(`Error al eliminar: ${err.message}`);
-        setExpenseToDelete(null);
+        setIncomeToDelete(null);
       },
     });
   };
 
   if (isLoading) {
-    return <div className="text-center p-12 text-muted-foreground">Cargando tus gastos...</div>;
+    return <div className="text-center p-12 text-muted-foreground">Cargando tus ingresos...</div>;
   }
 
   return (
     <div className="space-y-4">
-      {/* Modal Personalizado de Confirmación */}
-      <Dialog open={!!expenseToDelete} onOpenChange={(open) => !open && setExpenseToDelete(null)}>
+      <Dialog open={!!incomeToDelete} onOpenChange={(open) => !open && setIncomeToDelete(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Eliminar gasto?</DialogTitle>
+            <DialogTitle>¿Eliminar ingreso?</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-muted-foreground">Esta acción no se puede deshacer. El gasto será eliminado permanentemente de tu historial.</p>
+            <p className="text-muted-foreground">Esta acción no se puede deshacer. El ingreso será eliminado permanentemente de tu historial.</p>
           </div>
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setExpenseToDelete(null)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setIncomeToDelete(null)}>Cancelar</Button>
             <Button 
               className="bg-red-500 hover:bg-red-600 text-white" 
               onClick={confirmDelete} 
@@ -133,39 +123,37 @@ export function ExpenseList() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Detalles del Gasto */}
-      <Dialog open={!!selectedExpense} onOpenChange={(open) => !open && setSelectedExpense(null)}>
+      <Dialog open={!!selectedIncome} onOpenChange={(open) => !open && setSelectedIncome(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Detalle del Gasto</DialogTitle>
+            <DialogTitle>Detalle del Ingreso</DialogTitle>
           </DialogHeader>
-          {selectedExpense && (
+          {selectedIncome && (
             <div className="space-y-4 py-4">
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-muted-foreground font-medium">Categoría</span>
-                <span className="font-semibold">{selectedExpense.categories?.name || "General"}</span>
+                <span className="font-semibold text-emerald-500">{selectedIncome.category || "General"}</span>
               </div>
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-muted-foreground font-medium">Fecha</span>
-                <span className="font-semibold">{parseLocalDate(selectedExpense.date).toLocaleDateString()}</span>
+                <span className="font-semibold">{parseLocalDate(selectedIncome.date).toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-muted-foreground font-medium">Monto</span>
-                <span className="font-bold text-lg text-primary">${selectedExpense.amount.toFixed(2)}</span>
+                <span className="font-bold text-lg text-emerald-500">${formatCurrency(selectedIncome.amount)}</span>
               </div>
               <div className="flex flex-col gap-2 pb-2">
                 <span className="text-muted-foreground font-medium">Descripción</span>
-                <p className="text-sm bg-muted/30 p-3 rounded-md">{selectedExpense.description || "Sin descripción"}</p>
+                <p className="text-sm bg-muted/30 p-3 rounded-md">{selectedIncome.description || "Sin descripción"}</p>
               </div>
             </div>
           )}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setSelectedExpense(null)}>Cerrar</Button>
+            <Button variant="outline" onClick={() => setSelectedIncome(null)}>Cerrar</Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Acciones principales y Búsqueda */}
       <div className="flex flex-col gap-4 bg-background p-1 rounded-lg">
         <div className="flex flex-col md:flex-row gap-4 justify-between items-center w-full">
           <div className="relative w-full md:max-w-sm flex-1">
@@ -179,24 +167,25 @@ export function ExpenseList() {
           </div>
           
         <div className="flex flex-col sm:flex-row w-full md:w-auto items-center justify-end gap-2">
+          <Link href="/incomes/charts" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto gap-2">
+              <PieChartIcon className="h-4 w-4" />
+              Gráficos
+            </Button>
+          </Link>
           
-          <Button variant="outline" onClick={() => router.push("/expenses/charts")} className="w-full sm:w-auto gap-2">
-            <PieChartIcon className="h-4 w-4" />
-            Gráficos
-          </Button>
-
-          <Dialog open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen}>
+          <Dialog open={isIncomeModalOpen} onOpenChange={setIsIncomeModalOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto gap-2">
+              <Button className="w-full sm:w-auto gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-none">
                 <Plus className="h-4 w-4" />
-                Nuevo Gasto
+                Nuevo Ingreso
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Registrar un Gasto</DialogTitle>
+                <DialogTitle>Registrar un Ingreso</DialogTitle>
               </DialogHeader>
-              <ExpenseForm onSuccessCallback={() => setIsExpenseModalOpen(false)} />
+              <IncomeForm onSuccessCallback={() => setIsIncomeModalOpen(false)} />
             </DialogContent>
           </Dialog>
 
@@ -218,7 +207,6 @@ export function ExpenseList() {
                 )}
               </Button>
             </PopoverTrigger>
-            {/* collisionPadding asegura que el calendario nunca se salga de la pantalla en móviles */}
             <PopoverContent className="w-auto p-0 max-w-[calc(100vw-20px)]" align="center" collisionPadding={10}>
               <Calendar
                 mode="range"
@@ -251,18 +239,18 @@ export function ExpenseList() {
           )}
         </div>
         <div className="text-sm text-muted-foreground">
-          {filteredExpenses.length} resultado(s)
+          {filteredIncomes.length} resultado(s)
         </div>
       </div>
     </div>
 
-      {(!expenses || expenses.length === 0) ? (
+      {(!incomes || incomes.length === 0) ? (
         <Card className="p-12 text-center flex flex-col items-center justify-center border-dashed">
-          <p className="text-muted-foreground">No tienes gastos registrados aún.</p>
+          <p className="text-muted-foreground">No tienes ingresos registrados aún.</p>
         </Card>
-      ) : filteredExpenses.length === 0 ? (
+      ) : filteredIncomes.length === 0 ? (
         <Card className="p-12 text-center flex flex-col items-center justify-center border-dashed">
-          <p className="text-muted-foreground">No se encontraron gastos con esos filtros.</p>
+          <p className="text-muted-foreground">No se encontraron ingresos con esos filtros.</p>
         </Card>
       ) : (
         <Card className="overflow-hidden">
@@ -279,30 +267,30 @@ export function ExpenseList() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-background">
-                {paginatedExpenses.map((expense) => (
+                {paginatedIncomes.map((income) => (
                   <tr 
-                    key={expense.id} 
+                    key={income.id} 
                     className="hover:bg-muted/30 transition-colors group cursor-pointer"
-                    onClick={() => setSelectedExpense(expense)}
+                    onClick={() => setSelectedIncome(income)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {parseLocalDate(expense.date).toLocaleDateString()}
+                      {parseLocalDate(income.date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 font-medium text-sm">
-                      {(expense as any).categories?.name || "Categoría general"}
+                      {income.category || "General"}
                     </td>
                     <td className="px-6 py-4 text-muted-foreground max-w-[200px] truncate">
-                      {expense.description || "-"}
+                      {income.description || "-"}
                     </td>
-                    <td className="px-6 py-4 font-bold text-right text-sm">
-                      ${expense.amount.toFixed(2)}
+                    <td className="px-6 py-4 font-bold text-right text-sm text-emerald-500">
+                      ${formatCurrency(income.amount)}
                     </td>
                     <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 hover:bg-red-500/10"
-                        onClick={() => setExpenseToDelete(expense.id)}
+                        onClick={() => setIncomeToDelete(income.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Eliminar</span>
@@ -315,31 +303,31 @@ export function ExpenseList() {
 
             {/* --- VISTA MOBILE (LISTA DE TARJETAS) --- */}
             <div className="block md:hidden divide-y divide-border bg-background">
-              {paginatedExpenses.map((expense) => (
+              {paginatedIncomes.map((income) => (
                 <div 
-                  key={expense.id} 
+                  key={income.id} 
                   className="p-4 flex flex-col gap-3 hover:bg-muted/30 transition-colors cursor-pointer"
-                  onClick={() => setSelectedExpense(expense)}
+                  onClick={() => setSelectedIncome(income)}
                 >
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex flex-col min-w-0">
                       <span className="font-semibold text-foreground truncate">
-                        {(expense as any).categories?.name || "Categoría general"}
+                        {income.category || "General"}
                       </span>
-                      {expense.description && (
+                      {income.description && (
                         <span className="text-sm text-muted-foreground truncate mt-0.5">
-                          {expense.description}
+                          {income.description}
                         </span>
                       )}
                     </div>
-                    <span className="font-bold text-foreground whitespace-nowrap text-right">
-                      ${expense.amount.toFixed(2)}
+                    <span className="font-bold whitespace-nowrap text-right text-emerald-500">
+                      ${formatCurrency(income.amount)}
                     </span>
                   </div>
                   
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
-                      {parseLocalDate(expense.date).toLocaleDateString()}
+                      {parseLocalDate(income.date).toLocaleDateString()}
                     </span>
                     <Button 
                       variant="ghost" 
@@ -347,7 +335,7 @@ export function ExpenseList() {
                       className="h-8 px-3 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setExpenseToDelete(expense.id);
+                        setIncomeToDelete(income.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -360,29 +348,29 @@ export function ExpenseList() {
           </div>
           
           {totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 border-t border-border bg-muted/20">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/20">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="gap-1"
+                className="h-8 bg-background"
               >
-                <ChevronLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Anterior</span>
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Anterior
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Página <span className="font-medium text-foreground">{currentPage}</span> de {totalPages}
-              </span>
+              <div className="text-sm text-muted-foreground font-medium">
+                Página {currentPage} de {totalPages}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="gap-1"
+                className="h-8 bg-background"
               >
-                <span className="hidden sm:inline">Siguiente</span>
-                <ChevronRight className="w-4 h-4" />
+                Siguiente
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
           )}

@@ -3,6 +3,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from "recharts";
 import { useEffect, useState } from "react";
 import { Debt } from "@/features/debts/hooks/useDebts";
+import { formatCurrency } from "@/lib/utils";
 
 export function DebtChart({ debts }: { debts: Debt[] }) {
   const [mounted, setMounted] = useState(false);
@@ -41,9 +42,9 @@ export function DebtChart({ debts }: { debts: Debt[] }) {
 
   // Función para acortar o formatear números muy largos (ej. $1,000,000)
   const formatYAxis = (value: number) => {
-    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-    if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
-    return `$${value}`;
+    if (value >= 1000000) return `$${(value / 1000000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}M`;
+    if (value >= 1000) return `$${(value / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}k`;
+    return `$${value.toLocaleString("es-AR")}`;
   };
 
   return (
@@ -67,7 +68,7 @@ export function DebtChart({ debts }: { debts: Debt[] }) {
           tickFormatter={formatYAxis}
         />
         <Tooltip
-          formatter={(value) => [`$${Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Balance"]}
+          formatter={(value) => [`$${formatCurrency(Number(value ?? 0))}`, "Balance"]}
           cursor={{ fill: 'rgba(128,128,128,0.1)' }}
           contentStyle={{ 
             borderRadius: "8px", 
