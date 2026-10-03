@@ -14,10 +14,16 @@ export function GlobalAddButton() {
 
   return (
     <>
-      <div className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-50">
+      <div className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-50 group flex items-center justify-end">
+        {/* Tooltip interactivo (aparece a la izquierda del botón en hover) */}
+        <div className="absolute right-full top-1/2 -translate-y-1/2 mr-3 px-3 py-1.5 bg-foreground text-background text-sm font-medium rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-x-2 group-hover:translate-x-0 pointer-events-none transition-all duration-300 whitespace-nowrap shadow-md">
+          Nuevo registro
+        </div>
+
+        {/* Botón Principal con animación más suave (scale en lugar de translate-y) */}
         <Button 
           size="icon" 
-          className="h-14 w-14 rounded-full shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300"
+          className="h-14 w-14 rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 active:scale-95 transition-all duration-200"
           onClick={() => setIsOpen(true)}
         >
           <Plus className="h-6 w-6" />
