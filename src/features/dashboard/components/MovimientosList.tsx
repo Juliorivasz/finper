@@ -120,7 +120,7 @@ export function MovimientosList() {
                 </div>
                 <div className="flex flex-col items-end pl-4">
                   <span className={`font-bold whitespace-nowrap text-base sm:text-lg ${mov.movType === 'income' || mov.movType === 'debt_collect' ? 'text-emerald-500' : 'text-red-500'}`}>
-                    {mov.movType === 'income' || mov.movType === 'debt_collect' ? '+' : '-'}${'$'}{Math.abs(mov.amount).toFixed(2)}
+                    {mov.movType === 'income' || mov.movType === 'debt_collect' ? '+' : '-'}${formatCurrency(mov.amount)}
                   </span>
                 </div>
               </div>

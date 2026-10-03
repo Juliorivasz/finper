@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Search, Trash2, Loader2, CalendarIcon, X, ChevronLeft, ChevronRight, Plus, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { parseLocalDate } from "@/lib/utils";
+import { parseLocalDate, formatCurrency } from "@/lib/utils";
 import { useBalance } from "@/hooks/useBalance";
 import NumberFlow from "@number-flow/react";
 
@@ -173,7 +173,7 @@ export function ExpenseList() {
               </div>
               <div className="flex justify-between items-center pb-4 border-b border-border">
                 <span className="text-muted-foreground font-medium">Monto</span>
-                <span className="font-bold text-lg text-primary">${selectedExpense.amount.toFixed(2)}</span>
+                <span className="font-bold text-lg text-primary">${formatCurrency(selectedExpense.amount)}</span>
               </div>
               <div className="flex flex-col gap-2 pb-2">
                 <span className="text-muted-foreground font-medium">Descripción</span>
@@ -317,7 +317,7 @@ export function ExpenseList() {
                       {expense.description || "-"}
                     </td>
                     <td className="px-6 py-4 font-bold text-right text-sm">
-                      ${expense.amount.toFixed(2)}
+                      ${formatCurrency(expense.amount)}
                     </td>
                     <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <Button 
@@ -355,7 +355,7 @@ export function ExpenseList() {
                       )}
                     </div>
                     <span className="font-bold text-foreground whitespace-nowrap text-right">
-                      ${expense.amount.toFixed(2)}
+                      ${formatCurrency(expense.amount)}
                     </span>
                   </div>
                   

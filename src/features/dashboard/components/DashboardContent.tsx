@@ -325,8 +325,8 @@ export function DashboardContent() {
         <Card className="h-[350px] flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg">Últimos Movimientos</CardTitle>
-            <Link href="/gastos" className="text-xs text-primary hover:underline font-medium">
-              Ver todos &rarr;
+            <Link href="/movimientos" className="text-xs text-primary hover:underline font-medium">
+                Ver todos &rarr;
             </Link>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -352,7 +352,7 @@ export function DashboardContent() {
                       </div>
                     </div>
                     <span className={`font-bold whitespace-nowrap text-sm ${mov.movType === 'income' || mov.movType === 'debt_collect' ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {mov.movType === 'income' || mov.movType === 'debt_collect' ? '+' : '-'}${Math.abs(mov.amount).toFixed(2)}
+                      {mov.movType === 'income' || mov.movType === 'debt_collect' ? '+' : '-'}${formatCurrency(mov.amount)}
                     </span>
                   </div>
                 ))
