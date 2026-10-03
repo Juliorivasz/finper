@@ -1,9 +1,10 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useCreateDebtPayment } from "../hooks/useDebts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AnimatedAmountInput } from "@/components/ui/animated-amount-input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,7 +20,7 @@ interface PaymentValues {
 
 export function PaymentForm({ debtId, maxAmount, onSuccessCallback }: PaymentFormProps) {
   const { mutate: addPayment, isPending } = useCreateDebtPayment();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<PaymentValues>();
+  const { register, control, handleSubmit, reset, formState: { errors } } = useForm<PaymentValues>();
 
   const onSubmit = (data: PaymentValues) => {
     if (data.amount <= 0 || data.amount > maxAmount) {
@@ -43,12 +44,17 @@ export function PaymentForm({ debtId, maxAmount, onSuccessCallback }: PaymentFor
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium">Monto del abono</label>
-        <Input 
-          type="number" 
-          step="0.01" 
-          max={maxAmount}
-          placeholder="0.00" 
-          {...register("amount", { valueAsNumber: true, required: true })} 
+        <Controller
+          name="amount"
+          control={control}
+          rules={{ required: true, min: 0.01, max: maxAmount }}
+          render={({ field }) => (
+            <AnimatedAmountInput 
+              value={field.value} 
+              onChange={field.onChange} 
+              autoFocus 
+            />
+          )}
         />
         {errors.amount && <p className="text-red-500 text-sm">Ingresa un monto válido</p>}
         <p className="text-xs text-muted-foreground">Monto máximo: ${maxAmount.toFixed(2)}</p>
