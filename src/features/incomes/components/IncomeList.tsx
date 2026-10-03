@@ -14,7 +14,7 @@ import { format } from "date-fns";
 
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { IncomeForm } from "./IncomeForm";
+
 import { Income } from "../types";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { useBalance } from "@/hooks/useBalance";
@@ -35,7 +35,7 @@ export function IncomeList() {
   
   const [incomeToDelete, setIncomeToDelete] = useState<string | null>(null);
   const [selectedIncome, setSelectedIncome] = useState<Income | null>(null);
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
+  
   
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -196,20 +196,7 @@ export function IncomeList() {
             </Button>
           </Link>
           
-          <Dialog open={isIncomeModalOpen} onOpenChange={setIsIncomeModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-none">
-                <Plus className="h-4 w-4" />
-                Nuevo Ingreso
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar un Ingreso</DialogTitle>
-              </DialogHeader>
-              <IncomeForm onSuccessCallback={() => setIsIncomeModalOpen(false)} />
-            </DialogContent>
-          </Dialog>
+          
 
           <Popover>
             <PopoverTrigger asChild>

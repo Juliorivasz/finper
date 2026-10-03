@@ -54,7 +54,7 @@ export function ExpenseForm({ onSuccessCallback }: ExpenseFormProps) {
         <CardTitle>Registrar Gasto</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           
           {/* Monto */}
           <div className="space-y-1">
@@ -75,6 +75,7 @@ export function ExpenseForm({ onSuccessCallback }: ExpenseFormProps) {
             )}
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
           {/* Fecha */}
           <div className="space-y-1">
             <label className="text-sm font-medium text-foreground">Fecha</label>
@@ -102,6 +103,8 @@ export function ExpenseForm({ onSuccessCallback }: ExpenseFormProps) {
             {errors.category_id && (
               <p className="text-sm text-red-500">{errors.category_id.message}</p>
             )}
+          </div>
+
           </div>
 
           {/* Descripción */}

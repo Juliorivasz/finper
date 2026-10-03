@@ -108,6 +108,7 @@ export function DesktopSidebar() {
           <CreditCard className="w-5 h-5" /> 
           Deudas
         </Link>
+          <Link href="/movimientos" className={cn("flex items-center gap-3 px-3 py-2 rounded-md transition-colors", pathname === "/movimientos" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground")}> <Wallet className="w-5 h-5" /> Movimientos </Link>
       </nav>
 
       <div className="p-4 border-t border-border space-y-4">

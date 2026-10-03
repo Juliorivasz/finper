@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, CreditCard, AlertCircle, Plus, Scale, ArrowDownToLine, AlertTriangle, ArrowUpRight, ArrowDownRight, HandCoins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ExpenseForm } from "@/features/expenses/components/ExpenseForm";
-import { IncomeForm } from "@/features/incomes/components/IncomeForm";
+
+
 import { useGetExpenses } from "@/features/expenses/hooks/useExpenses";
 import { useGetIncomes } from "@/features/incomes/hooks/useIncomes";
 import { CategoryChart } from "./CategoryChart";
@@ -15,7 +15,7 @@ import { useGetDebts } from "@/features/debts/hooks/useDebts";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { useBalance } from "@/hooks/useBalance";
 import NumberFlow from "@number-flow/react";
-import { DebtForm } from "@/features/debts/components/DebtForm";
+
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
@@ -28,10 +28,10 @@ export function DashboardContent() {
   
   const router = useRouter();
   
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
-  const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  
+  
+  
 
   // Calcular KPIs de Flujo de Caja
   const { totalSalidasMes, totalEntradasMes, balanceTotal, ultimosMovimientos, isLoading: isBalanceLoading } = useBalance();
@@ -107,58 +107,13 @@ export function DashboardContent() {
           <p className="text-muted-foreground mt-1">Aquí tienes un vistazo rápido a tus finanzas de este mes.</p>
         </div>
         
-        <Dialog open={isDebtModalOpen} onOpenChange={setIsDebtModalOpen}>
-          <DialogContent><DialogHeader><DialogTitle>Registrar una Deuda</DialogTitle></DialogHeader><DebtForm onSuccessCallback={() => setIsDebtModalOpen(false)} /></DialogContent>
-        </Dialog>
-        <Dialog open={isIncomeModalOpen} onOpenChange={setIsIncomeModalOpen}>
-          <DialogContent><DialogHeader><DialogTitle>Registrar un Ingreso</DialogTitle></DialogHeader><IncomeForm onSuccessCallback={() => setIsIncomeModalOpen(false)} /></DialogContent>
-        </Dialog>
-        <Dialog open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen}>
-          <DialogContent><DialogHeader><DialogTitle>Registrar un Gasto</DialogTitle></DialogHeader><ExpenseForm onSuccessCallback={() => setIsExpenseModalOpen(false)} /></DialogContent>
-        </Dialog>
+        
+        
+        
 
-        {/* VISTA DESKTOP */}
-        <div className="hidden sm:flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => setIsDebtModalOpen(true)}>
-            <Plus className="w-4 h-4" /> Nueva Deuda
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => setIsIncomeModalOpen(true)}>
-            <Plus className="w-4 h-4" /> Nuevo Ingreso
-          </Button>
-          <Button className="gap-2" onClick={() => setIsExpenseModalOpen(true)}>
-            <Plus className="w-4 h-4" /> Nuevo Gasto
-          </Button>
-        </div>
+        
 
-        {/* VISTA MOBILE */}
-        <div className="sm:hidden w-full mt-4">
-          <Dialog open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full gap-2 h-12 text-base shadow-sm" size="lg">
-                <Plus className="w-5 h-5" /> Registrar Nuevo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="w-[90vw] max-w-[400px] rounded-2xl">
-              <DialogHeader>
-                <DialogTitle>¿Qué deseas registrar?</DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col gap-3 py-2">
-                <Button variant="outline" className="h-16 text-base justify-start px-4 gap-4" onClick={() => { setIsMobileMenuOpen(false); setTimeout(() => setIsIncomeModalOpen(true), 200); }}>
-                  <div className="p-2 bg-green-500/10 rounded-full text-green-500"><ArrowUpRight className="w-5 h-5" /></div>
-                  Nuevo Ingreso
-                </Button>
-                <Button variant="outline" className="h-16 text-base justify-start px-4 gap-4" onClick={() => { setIsMobileMenuOpen(false); setTimeout(() => setIsExpenseModalOpen(true), 200); }}>
-                  <div className="p-2 bg-red-500/10 rounded-full text-red-500"><ArrowDownRight className="w-5 h-5" /></div>
-                  Nuevo Gasto
-                </Button>
-                <Button variant="outline" className="h-16 text-base justify-start px-4 gap-4" onClick={() => { setIsMobileMenuOpen(false); setTimeout(() => setIsDebtModalOpen(true), 200); }}>
-                  <div className="p-2 bg-amber-500/10 rounded-full text-amber-500"><HandCoins className="w-5 h-5" /></div>
-                  Nueva Deuda
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+        
       </div>
       
       {deudasVencidas.length > 0 && (

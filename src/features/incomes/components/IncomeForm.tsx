@@ -75,7 +75,7 @@ export function IncomeForm({ onSuccessCallback }: IncomeFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 py-2">
       {/* Monto */}
       <div className="space-y-1">
         <label className="text-sm font-medium text-foreground">Monto</label>
@@ -95,19 +95,21 @@ export function IncomeForm({ onSuccessCallback }: IncomeFormProps) {
         )}
       </div>
       
-      {/* Descripción */}
+      
+
+      
+
+      
+      <div className="grid grid-cols-2 gap-3">
+        {/* Fecha */}
       <div className="space-y-1">
-        <label className="text-sm font-medium text-foreground">Descripción</label>
-        <Input 
-          placeholder="Ej. Sueldo mensual" 
-          {...register("description")} 
-        />
-        {errors.description && (
-          <p className="text-sm text-red-500">{errors.description.message}</p>
+        <label className="text-sm font-medium text-foreground">Fecha</label>
+        <Input type="date" {...register("date")} />
+        {errors.date && (
+          <p className="text-sm text-red-500">{errors.date.message}</p>
         )}
       </div>
-
-      {/* Categoría */}
+        {/* Categoría */}
       <div className="space-y-1">
         <label className="text-sm font-medium text-foreground">Categoría</label>
         <select
@@ -124,15 +126,19 @@ export function IncomeForm({ onSuccessCallback }: IncomeFormProps) {
           <p className="text-sm text-red-500">{errors.category.message}</p>
         )}
       </div>
-
-      {/* Fecha */}
+      </div>
+      {/* Descripción */}
       <div className="space-y-1">
-        <label className="text-sm font-medium text-foreground">Fecha</label>
-        <Input type="date" {...register("date")} />
-        {errors.date && (
-          <p className="text-sm text-red-500">{errors.date.message}</p>
+        <label className="text-sm font-medium text-foreground">Descripción</label>
+        <Input 
+          placeholder="Ej. Sueldo mensual" 
+          {...register("description")} 
+        />
+        {errors.description && (
+          <p className="text-sm text-red-500">{errors.description.message}</p>
         )}
       </div>
+    
 
       <Button type="submit" className="w-full mt-4" disabled={isPending}>
         {isPending ? (

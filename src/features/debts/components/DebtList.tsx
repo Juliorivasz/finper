@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { formatDistanceStrict } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { DebtForm } from "./DebtForm";
+
 import { PaymentForm } from "./PaymentForm";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ export function DebtList() {
   const { mutate: deleteDebt, isPending: isDeleting } = useDeleteDebt();
   
   const [debtToDelete, setDebtToDelete] = useState<string | null>(null);
-  const [isNewDebtModalOpen, setIsNewDebtModalOpen] = useState(false);
+  
   
   const [debtToPay, setDebtToPay] = useState<{ id: string; pendingAmount: number } | null>(null);
   const [debtHistoryToView, setDebtHistoryToView] = useState<Debt & { paid: number, pending: number } | null>(null);
@@ -224,20 +224,7 @@ export function DebtList() {
               <PieChartIcon className="h-4 w-4" /> Gráficos
             </Button>
           </Link>
-          <Dialog open={isNewDebtModalOpen} onOpenChange={setIsNewDebtModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" /> Registrar Deuda
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar una Deuda</DialogTitle>
-              </DialogHeader>
-              <DebtForm onSuccessCallback={() => setIsNewDebtModalOpen(false)} />
-            </DialogContent>
-          </Dialog>
-        </div>
+                  </div>
 
         {/* VISTA MOBILE */}
         <div className="flex sm:hidden gap-2 w-full">
@@ -246,20 +233,7 @@ export function DebtList() {
               <PieChartIcon className="h-4 w-4" /> Gráficos
             </Button>
           </Link>
-          <Dialog open={isNewDebtModalOpen} onOpenChange={setIsNewDebtModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex-1 gap-2">
-                <Plus className="h-4 w-4" /> Registrar
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar una Deuda</DialogTitle>
-              </DialogHeader>
-              <DebtForm onSuccessCallback={() => setIsNewDebtModalOpen(false)} />
-            </DialogContent>
-          </Dialog>
-        </div>
+                  </div>
       </div>
 
       {processedDebts.length > 0 && (

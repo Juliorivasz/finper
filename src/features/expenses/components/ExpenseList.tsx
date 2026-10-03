@@ -18,7 +18,7 @@ import NumberFlow from "@number-flow/react";
 import { es } from "date-fns/locale";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ExpenseForm } from "./ExpenseForm";
+
 
 const ITEMS_PER_PAGE = 8; // Mostramos 8 por página para no saturar la pantalla móvil
 
@@ -37,7 +37,7 @@ export function ExpenseList() {
   
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
   const [selectedExpense, setSelectedExpense] = useState<any | null>(null);
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  
   
   // Estado para la paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -207,20 +207,7 @@ export function ExpenseList() {
             Gráficos
           </Button>
 
-          <Dialog open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto gap-2">
-                <Plus className="h-4 w-4" />
-                Nuevo Gasto
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar un Gasto</DialogTitle>
-              </DialogHeader>
-              <ExpenseForm onSuccessCallback={() => setIsExpenseModalOpen(false)} />
-            </DialogContent>
-          </Dialog>
+          
 
           <Popover>
             <PopoverTrigger asChild>
