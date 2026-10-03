@@ -5,16 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet, CreditCard, AlertCircle, Plus, Scale, ArrowDownToLine, AlertTriangle, ArrowUpRight, ArrowDownRight, HandCoins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ExpenseForm } from "@/features/expenses/components/ExpenseForm";
-import { IncomeForm } from "@/features/incomes/components/IncomeForm";
+
+
 import { useGetExpenses } from "@/features/expenses/hooks/useExpenses";
 import { useGetIncomes } from "@/features/incomes/hooks/useIncomes";
 import { CategoryChart } from "./CategoryChart";
 import { DebtChart } from "./DebtChart";
 import { useGetDebts } from "@/features/debts/hooks/useDebts";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
+import { useBalance } from "@/hooks/useBalance";
 import NumberFlow from "@number-flow/react";
-import { DebtForm } from "@/features/debts/components/DebtForm";
+
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
@@ -27,96 +28,13 @@ export function DashboardContent() {
   
   const router = useRouter();
   
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
-  const [isDebtModalOpen, setIsDebtModalOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  
+  
+  
 
   // Calcular KPIs de Flujo de Caja
-  const { totalSalidasMes, totalEntradasMes, balanceTotal, ultimosMovimientos } = useMemo(() => {
-    let gastosMes = 0;
-    let ingresosMes = 0;
-    let pagosEmitidosMes = 0;
-    let pagosRecibidosMes = 0;
-    
-    const movimientos = expenses ? expenses.slice(0, 5) : [];
-    
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    if (expenses) {
-      expenses.forEach(exp => {
-        const expDate = parseLocalDate(exp.date);
-        if (expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear) {
-          gastosMes += exp.amount;
-        }
-      });
-    }
-
-    if (incomes) {
-      incomes.forEach(inc => {
-        const incDate = parseLocalDate(inc.date);
-        if (incDate.getMonth() === currentMonth && incDate.getFullYear() === currentYear) {
-          ingresosMes += inc.amount;
-        }
-      });
-    }
-
-    if (debts) {
-      debts.forEach(d => {
-        if (d.debt_payments) {
-          d.debt_payments.forEach(p => {
-            const pDate = parseLocalDate(p.date);
-            if (pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear) {
-              if (d.type === 'payable') {
-                pagosEmitidosMes += p.amount;
-              } else {
-                pagosRecibidosMes += p.amount;
-              }
-            }
-          });
-        }
-      });
-    }
-
-    const totalEntradas = ingresosMes + pagosRecibidosMes;
-    const totalSalidas = gastosMes + pagosEmitidosMes;
-    
-    let totalGastosHistorico = 0;
-    let totalIngresosHistorico = 0;
-    let totalPagosEmitidosHistorico = 0;
-    let totalPagosRecibidosHistorico = 0;
-
-    if (expenses) expenses.forEach(e => totalGastosHistorico += e.amount);
-    if (incomes) incomes.forEach(i => totalIngresosHistorico += i.amount);
-    if (debts) {
-      debts.forEach(d => {
-        // Solo se toman en cuenta los abonos (pagos reales), NO el monto principal de la deuda
-        if (d.debt_payments) {
-          d.debt_payments.forEach(p => {
-            if (d.type === "payable") {
-              totalPagosEmitidosHistorico += p.amount; // Dinero que salió para pagar la deuda
-            } else {
-              totalPagosRecibidosHistorico += p.amount; // Dinero que entró porque me pagaron
-            }
-          });
-        }
-      });
-    }
-
-    const totalEntradasHistorico = totalIngresosHistorico + totalPagosRecibidosHistorico;
-    const totalSalidasHistorico = totalGastosHistorico + totalPagosEmitidosHistorico;
-    const balanceTotal = totalEntradasHistorico - totalSalidasHistorico;
-
-
-    return { 
-      totalSalidasMes: totalSalidas, 
-      totalEntradasMes: totalEntradas,
-      balanceTotal,
-      ultimosMovimientos: movimientos,
-    };
-  }, [expenses, incomes, debts]);
+  const { totalSalidasMes, totalEntradasMes, balanceTotal, ultimosMovimientos, isLoading: isBalanceLoading } = useBalance();
 
   // Calcular KPIs de Deudas
   const { deudaTotal, deudaTotalEsteMes, deudaVencimientoTexto, deudaVencimientoNombre, entidadesConDeuda, deudasVencidas } = useMemo(() => {
@@ -181,66 +99,21 @@ export function DashboardContent() {
   }, [debts]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-6xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Resumen General</h1>
-          <p className="text-muted-foreground mt-1">Aquí tienes un vistazo rápido a tus finanzas de este mes.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Resumen General</h1>
+          <p className="text-sm text-muted-foreground">Aquí tienes un vistazo rápido a tus finanzas de este mes.</p>
         </div>
         
-        <Dialog open={isDebtModalOpen} onOpenChange={setIsDebtModalOpen}>
-          <DialogContent><DialogHeader><DialogTitle>Registrar una Deuda</DialogTitle></DialogHeader><DebtForm onSuccessCallback={() => setIsDebtModalOpen(false)} /></DialogContent>
-        </Dialog>
-        <Dialog open={isIncomeModalOpen} onOpenChange={setIsIncomeModalOpen}>
-          <DialogContent><DialogHeader><DialogTitle>Registrar un Ingreso</DialogTitle></DialogHeader><IncomeForm onSuccessCallback={() => setIsIncomeModalOpen(false)} /></DialogContent>
-        </Dialog>
-        <Dialog open={isExpenseModalOpen} onOpenChange={setIsExpenseModalOpen}>
-          <DialogContent><DialogHeader><DialogTitle>Registrar un Gasto</DialogTitle></DialogHeader><ExpenseForm onSuccessCallback={() => setIsExpenseModalOpen(false)} /></DialogContent>
-        </Dialog>
+        
+        
+        
 
-        {/* VISTA DESKTOP */}
-        <div className="hidden sm:flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={() => setIsDebtModalOpen(true)}>
-            <Plus className="w-4 h-4" /> Nueva Deuda
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => setIsIncomeModalOpen(true)}>
-            <Plus className="w-4 h-4" /> Nuevo Ingreso
-          </Button>
-          <Button className="gap-2" onClick={() => setIsExpenseModalOpen(true)}>
-            <Plus className="w-4 h-4" /> Nuevo Gasto
-          </Button>
-        </div>
+        
 
-        {/* VISTA MOBILE */}
-        <div className="sm:hidden w-full mt-4">
-          <Dialog open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full gap-2 h-12 text-base shadow-sm" size="lg">
-                <Plus className="w-5 h-5" /> Registrar Nuevo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="w-[90vw] max-w-[400px] rounded-2xl">
-              <DialogHeader>
-                <DialogTitle>¿Qué deseas registrar?</DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col gap-3 py-2">
-                <Button variant="outline" className="h-16 text-base justify-start px-4 gap-4" onClick={() => { setIsMobileMenuOpen(false); setTimeout(() => setIsIncomeModalOpen(true), 200); }}>
-                  <div className="p-2 bg-green-500/10 rounded-full text-green-500"><ArrowUpRight className="w-5 h-5" /></div>
-                  Nuevo Ingreso
-                </Button>
-                <Button variant="outline" className="h-16 text-base justify-start px-4 gap-4" onClick={() => { setIsMobileMenuOpen(false); setTimeout(() => setIsExpenseModalOpen(true), 200); }}>
-                  <div className="p-2 bg-red-500/10 rounded-full text-red-500"><ArrowDownRight className="w-5 h-5" /></div>
-                  Nuevo Gasto
-                </Button>
-                <Button variant="outline" className="h-16 text-base justify-start px-4 gap-4" onClick={() => { setIsMobileMenuOpen(false); setTimeout(() => setIsDebtModalOpen(true), 200); }}>
-                  <div className="p-2 bg-amber-500/10 rounded-full text-amber-500"><HandCoins className="w-5 h-5" /></div>
-                  Nueva Deuda
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+        
       </div>
       
       {deudasVencidas.length > 0 && (
@@ -260,36 +133,33 @@ export function DashboardContent() {
             variant="destructive" 
             size="sm" 
             className="w-full sm:w-auto whitespace-nowrap"
-            onClick={() => router.push('/debts')}
+            onClick={() => router.push('/deudas')}
           >
             Ir a pagarlas
           </Button>
         </div>
       )}
 
-      <div className="flex lg:grid lg:grid-cols-5 gap-4 lg:gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none pb-2 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] *:min-w-[85%] *:sm:min-w-[45%] *:lg:min-w-0 *:shrink-0 *:snap-start">
+      
+        {/* HERO BALANCE (DISEÑO TIPO BANCO) */}
+        <div className="flex flex-col items-center justify-center bg-card p-8 rounded-2xl border border-border shadow-sm mb-2 relative overflow-hidden">
+          <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-primary to-blue-500"></div>
+          <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Saldo Disponible</span>
+          <div className={`text-5xl md:text-6xl font-bold tracking-tight ${balanceTotal > 0 ? "text-emerald-500" : balanceTotal < 0 ? "text-red-500" : "text-foreground"}`}>
+            {isBalanceLoading ? "..." : (
+              <NumberFlow 
+                value={balanceTotal} 
+                locales="es-AR" 
+                format={{ style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }} 
+                animated={true}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="flex lg:grid lg:grid-cols-4 gap-4 lg:gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none pb-2 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] *:min-w-[85%] *:sm:min-w-[45%] *:lg:min-w-0 *:shrink-0 *:snap-start">
         
-        <Card className="bg-card shadow-sm border-emerald-500/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Balance General</CardTitle>
-            <div className="p-2 bg-emerald-500/10 rounded-full">
-              <Scale className="w-4 h-4 text-emerald-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold flex ${balanceTotal > 0 ? "text-emerald-500" : balanceTotal < 0 ? "text-red-500" : ""}`}>
-              {isIncomesLoading || isExpensesLoading || isDebtsLoading ? "..." : (
-                <NumberFlow 
-                  value={balanceTotal} 
-                  locales="es-AR" 
-                  format={{ style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }} 
-                  animated={true}
-                />
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Este mes</p>
-          </CardContent>
-        </Card>
+        
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -309,7 +179,7 @@ export function DashboardContent() {
                 />
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Ingresos + Cobros</p>
+            <p className="text-xs text-sm text-muted-foreground">Ingresos + Cobros</p>
           </CardContent>
         </Card>
 
@@ -331,7 +201,7 @@ export function DashboardContent() {
                 />
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Gastos + Pagos</p>
+            <p className="text-xs text-sm text-muted-foreground">Gastos + Pagos</p>
           </CardContent>
         </Card>
         
@@ -353,7 +223,7 @@ export function DashboardContent() {
                 />
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 truncate" title={`Este mes: $${formatCurrency(deudaTotalEsteMes)} | Total en ${entidadesConDeuda} registro(s)`}>
+            <p className="text-xs text-sm text-muted-foreground truncate" title={`Este mes: $${formatCurrency(deudaTotalEsteMes)} | Total en ${entidadesConDeuda} registro(s)`}>
               Este mes: ${formatCurrency(deudaTotalEsteMes)}
             </p>
           </CardContent>
@@ -370,7 +240,7 @@ export function DashboardContent() {
             <div className="text-2xl font-bold capitalize truncate" title={deudaVencimientoNombre || (deudasVencidas.length > 0 ? "Deudas Vencidas" : "Al día")}>
               {isDebtsLoading ? "..." : (deudaVencimientoNombre || (deudasVencidas.length > 0 ? "Deudas Vencidas" : "Al día"))}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
+            <p className="text-xs text-sm text-muted-foreground truncate">
               {deudaVencimientoNombre 
                 ? `Vence: ${deudaVencimientoTexto}` 
                 : (deudasVencidas.length > 0 ? "Atiende tus pagos atrasados" : "No hay pagos urgentes")
@@ -410,33 +280,39 @@ export function DashboardContent() {
         <Card className="h-[350px] flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg">Últimos Movimientos</CardTitle>
-            <Link href="/expenses" className="text-xs text-primary hover:underline font-medium">
-              Ver todos &rarr;
+            <Link href="/movimientos" className="text-xs text-primary hover:underline font-medium">
+                Ver todos &rarr;
             </Link>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
-            {isExpensesLoading ? (
-              <p className="text-muted-foreground text-sm text-center mt-4">Cargando...</p>
-            ) : ultimosMovimientos.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center mt-4">Aún no tienes gastos.</p>
-            ) : (
-              ultimosMovimientos.map((gasto) => (
-                <div key={gasto.id} className="flex justify-between items-center p-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-lg border border-border">
-                  <div>
-                    <p className="font-medium text-foreground text-sm">
-                      {(gasto as any).categories?.name || "Gasto"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {parseLocalDate(gasto.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="font-bold text-foreground text-sm">
-                    ${formatCurrency(gasto.amount)}
-                  </div>
+              {isBalanceLoading ? (
+                <p className="text-muted-foreground text-sm text-center mt-4">Cargando...</p>
+              ) : ultimosMovimientos.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <p className="text-muted-foreground text-sm">No hay movimientos recientes</p>
                 </div>
-              ))
-            )}
-          </CardContent>
+              ) : (
+                ultimosMovimientos.map((mov: any) => (
+                  <div key={mov.id} className="flex justify-between items-center p-3 bg-muted/30 hover:bg-muted/50 transition-colors rounded-lg border border-border cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${mov.movType === 'income' || mov.movType === 'debt_collect' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                      <div>
+                        <p className="font-medium text-foreground text-sm">
+                          {mov.movName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {parseLocalDate(mov.date).toLocaleDateString()}
+                          {mov.description && <span className="ml-1 opacity-70">- {mov.description}</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`font-bold whitespace-nowrap text-sm ${mov.movType === 'income' || mov.movType === 'debt_collect' ? 'text-emerald-500' : 'text-red-500'}`}>
+                      {mov.movType === 'income' || mov.movType === 'debt_collect' ? '+' : '-'}${formatCurrency(mov.amount)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </CardContent>
         </Card>
       </div>
     </div>

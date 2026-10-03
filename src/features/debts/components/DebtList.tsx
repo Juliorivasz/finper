@@ -6,12 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Trash2, ArrowUpRight, ArrowDownRight, Plus, HandCoins, ChevronLeft, ChevronRight, History, Search, PieChart as PieChartIcon } from "lucide-react";
+import { X, Loader2, Trash2, ArrowUpRight, ArrowDownRight, Plus, HandCoins, ChevronLeft, ChevronRight, History, Search, PieChart as PieChartIcon } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceStrict } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
-import { DebtForm } from "./DebtForm";
+
 import { PaymentForm } from "./PaymentForm";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ export function DebtList() {
   const { mutate: deleteDebt, isPending: isDeleting } = useDeleteDebt();
   
   const [debtToDelete, setDebtToDelete] = useState<string | null>(null);
-  const [isNewDebtModalOpen, setIsNewDebtModalOpen] = useState(false);
+  
   
   const [debtToPay, setDebtToPay] = useState<{ id: string; pendingAmount: number } | null>(null);
   const [debtHistoryToView, setDebtHistoryToView] = useState<Debt & { paid: number, pending: number } | null>(null);
@@ -214,100 +214,83 @@ export function DebtList() {
         </Card>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-foreground">Registro Detallado</h2>
-        
-        {/* VISTA DESKTOP */}
-        <div className="hidden sm:flex gap-2">
-          <Link href="/debts/charts">
-            <Button variant="outline" className="gap-2">
-              <PieChartIcon className="h-4 w-4" /> Gráficos
-            </Button>
-          </Link>
-          <Dialog open={isNewDebtModalOpen} onOpenChange={setIsNewDebtModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" /> Registrar Deuda
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar una Deuda</DialogTitle>
-              </DialogHeader>
-              <DebtForm onSuccessCallback={() => setIsNewDebtModalOpen(false)} />
-            </DialogContent>
-          </Dialog>
-        </div>
+      <div className="flex flex-col gap-4 bg-background p-1 rounded-lg">
+  <div className="flex flex-col md:flex-row gap-4 justify-between items-center w-full">
+    <div className="relative w-full md:max-w-sm flex-1">
+      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+      <Input
+        placeholder="Buscar..."
+        className="pl-9 bg-background w-full"
+        value={searchTerm}
+        onChange={(e) => {
+          setSearchTerm(e.target.value);
+          setCurrentPage(1);
+        }}
+      />
+    </div>
+    
+    <div className="flex flex-col sm:flex-row w-full md:w-auto items-center justify-end gap-2">
+      <Link href="/deudas/charts" className="w-full sm:w-auto">
+        <Button variant="outline" className="w-full sm:w-auto gap-2">
+          <PieChartIcon className="h-4 w-4" />
+          Gráficos
+        </Button>
+      </Link>
+      
+      <select
+        className="flex h-10 w-full sm:w-[160px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        value={typeFilter}
+        onChange={(e) => {
+          setTypeFilter(e.target.value);
+          setCurrentPage(1);
+        }}
+      >
+        <option value="all">Todas</option>
+        <option value="payable">Yo debo</option>
+        <option value="receivable">Me deben</option>
+      </select>
 
-        {/* VISTA MOBILE */}
-        <div className="flex sm:hidden gap-2 w-full">
-          <Link href="/debts/charts" className="flex-1">
-            <Button variant="outline" className="w-full gap-2">
-              <PieChartIcon className="h-4 w-4" /> Gráficos
+      <select
+        className="flex h-10 w-full sm:w-[220px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        value={sortBy}
+        onChange={(e) => {
+          setSortBy(e.target.value);
+          setCurrentPage(1);
+        }}
+      >
+        <option value="due_date_asc">Vencimiento (Próximo)</option>
+        <option value="amount_desc">Monto (Mayor)</option>
+        <option value="amount_asc">Monto (Menor)</option>
+        <option value="created_desc">Recientes</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+      
+      <div className="flex justify-between items-center w-full min-h-[32px] my-2">
+        <div>
+          {(searchTerm !== "" || typeFilter !== "all" || sortBy !== "due_date_asc") && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                setSearchTerm("");
+                setTypeFilter("all");
+                setSortBy("due_date_asc");
+                setCurrentPage(1);
+              }} 
+              className="h-8 px-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4 mr-1" /> Limpiar filtros
             </Button>
-          </Link>
-          <Dialog open={isNewDebtModalOpen} onOpenChange={setIsNewDebtModalOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex-1 gap-2">
-                <Plus className="h-4 w-4" /> Registrar
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Registrar una Deuda</DialogTitle>
-              </DialogHeader>
-              <DebtForm onSuccessCallback={() => setIsNewDebtModalOpen(false)} />
-            </DialogContent>
-          </Dialog>
+          )}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {filteredAndSortedDebts.length} resultado(s)
         </div>
       </div>
-
-      {processedDebts.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-xl border border-border shadow-sm">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Buscar por descripción..." 
-              className="pl-9 bg-background"
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <select
-              className="flex h-9 w-full sm:w-[160px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              value={typeFilter}
-              onChange={(e) => {
-                setTypeFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="all">Todas</option>
-              <option value="payable">Yo debo</option>
-              <option value="receivable">Me deben</option>
-            </select>
-
-            <select
-              className="flex h-9 w-full sm:w-[220px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="due_date_asc">Vencimiento (Más próximo)</option>
-              <option value="amount_desc">Monto pendiente (Mayor)</option>
-              <option value="amount_asc">Monto pendiente (Menor)</option>
-              <option value="created_desc">Fecha de registro (Nuevos)</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      {processedDebts.length === 0 ? (
+{processedDebts.length === 0 ? (
         <Card className="p-12 text-center flex flex-col items-center justify-center border-dashed">
           <p className="text-muted-foreground">No tienes deudas registradas.</p>
         </Card>

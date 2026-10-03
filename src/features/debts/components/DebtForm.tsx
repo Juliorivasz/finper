@@ -18,51 +18,45 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
   const { mutate: createDebt, isPending } = useCreateDebt();
 
   const {
-    register, control,
+    register,
     handleSubmit,
+    control,
     reset,
     formState: { errors },
   } = useForm<DebtFormValues>({
     resolver: zodResolver(debtSchema),
     defaultValues: {
-      type: "payable", // Yo debo por defecto
+      amount: "" as unknown as number,
+      type: "payable",
+      description: "",
+      due_date: "",
     },
   });
 
   const onSubmit = (data: DebtFormValues) => {
-    createDebt(data, {
-      onSuccess: () => {
-        toast.success("Deuda registrada exitosamente");
-        reset();
-        onSuccessCallback?.();
+    createDebt(
+      {
+        ...data,
+        amount: Number(data.amount),
+        due_date: data.due_date ? new Date(data.due_date).toISOString() : undefined,
       },
-      onError: (error) => {
-        toast.error(`Hubo un error: ${error.message}`);
-      },
-    });
+      {
+        onSuccess: () => {
+          toast.success("Deuda registrada con éxito");
+          reset();
+          if (onSuccessCallback) onSuccessCallback();
+        },
+        onError: (error) => {
+          toast.error(`Error al registrar la deuda: ${error.message}`);
+        },
+      }
+    );
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Tipo de deuda</label>
-        <select
-          {...register("type")}
-          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value="payable">Yo debo (Por Pagar)</option>
-          <option value="receivable">Me deben (Por Cobrar)</option>
-        </select>
-        {errors.type && <p className="text-red-500 text-sm">{errors.type.message}</p>}
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Descripción (Ej: Prestamo a Juan)</label>
-        <Input placeholder="Descripción de la deuda" {...register("description")} />
-        {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-      </div>
-
-      <div className="space-y-2">
+      {/* Monto */}
+      <div className="space-y-1.5">
         <label className="text-sm font-medium text-foreground">Monto</label>
         <Controller
           name="amount"
@@ -75,15 +69,50 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
             />
           )}
         />
-        {errors.amount && <p className="text-red-500 text-sm">{errors.amount.message}</p>}
+        {errors.amount && (
+          <p className="text-sm text-red-500">{errors.amount.message}</p>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Fecha límite de pago (Opcional)</label>
-        <Input type="date" {...register("due_date")} />
+      <div className="grid grid-cols-2 gap-4">
+        {/* Fecha de vencimiento */}
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">Límite (Opcional)</label>
+          <Input type="date" {...register("due_date")} />
+          {errors.due_date && (
+            <p className="text-sm text-red-500">{errors.due_date.message}</p>
+          )}
+        </div>
+
+        {/* Tipo de deuda */}
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">Tipo de Deuda</label>
+          <select
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50"
+            {...register("type")}
+          >
+            <option value="payable">Por Pagar</option>
+            <option value="receivable">Por Cobrar</option>
+          </select>
+          {errors.type && (
+            <p className="text-sm text-red-500">{errors.type.message}</p>
+          )}
+        </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      {/* Descripción */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-foreground">Descripción</label>
+        <Input 
+          placeholder="Ej: Préstamo a Juan..." 
+          {...register("description")} 
+        />
+        {errors.description && (
+          <p className="text-sm text-red-500">{errors.description.message}</p>
+        )}
+      </div>
+
+      <Button type="submit" className="w-full mt-2" disabled={isPending}>
         {isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

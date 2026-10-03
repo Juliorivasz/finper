@@ -61,10 +61,10 @@ export function DesktopSidebar() {
       
       <nav className="flex-1 p-4 space-y-2">
         <Link 
-          href="/dashboard" 
+          href="/resumen" 
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
-            pathname === "/dashboard" 
+            pathname === "/resumen" 
               ? "bg-primary/10 text-primary font-medium" 
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
@@ -73,10 +73,10 @@ export function DesktopSidebar() {
           Resumen
         </Link>
         <Link 
-          href="/incomes" 
+          href="/ingresos" 
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
-            pathname === "/incomes" 
+            pathname === "/ingresos" 
               ? "bg-primary/10 text-primary font-medium" 
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
@@ -85,10 +85,10 @@ export function DesktopSidebar() {
           Ingresos
         </Link>
         <Link 
-          href="/expenses" 
+          href="/gastos" 
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
-            pathname === "/expenses" 
+            pathname === "/gastos" 
               ? "bg-primary/10 text-primary font-medium" 
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
@@ -97,10 +97,10 @@ export function DesktopSidebar() {
           Gastos
         </Link>
         <Link 
-          href="/debts" 
+          href="/deudas" 
           className={cn(
             "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
-            pathname === "/debts" 
+            pathname === "/deudas" 
               ? "bg-primary/10 text-primary font-medium" 
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
@@ -108,6 +108,7 @@ export function DesktopSidebar() {
           <CreditCard className="w-5 h-5" /> 
           Deudas
         </Link>
+          <Link href="/movimientos" className={cn("flex items-center gap-3 px-3 py-2 rounded-md transition-colors", pathname === "/movimientos" ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground")}> <Wallet className="w-5 h-5" /> Movimientos </Link>
       </nav>
 
       <div className="p-4 border-t border-border space-y-4">
