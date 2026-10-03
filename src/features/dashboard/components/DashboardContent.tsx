@@ -99,12 +99,12 @@ export function DashboardContent() {
   }, [debts]);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-6xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Resumen General</h1>
-          <p className="text-muted-foreground mt-1">Aquí tienes un vistazo rápido a tus finanzas de este mes.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Resumen General</h1>
+          <p className="text-sm text-muted-foreground">Aquí tienes un vistazo rápido a tus finanzas de este mes.</p>
         </div>
         
         
@@ -179,7 +179,7 @@ export function DashboardContent() {
                 />
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Ingresos + Cobros</p>
+            <p className="text-xs text-sm text-muted-foreground">Ingresos + Cobros</p>
           </CardContent>
         </Card>
 
@@ -201,7 +201,7 @@ export function DashboardContent() {
                 />
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Gastos + Pagos</p>
+            <p className="text-xs text-sm text-muted-foreground">Gastos + Pagos</p>
           </CardContent>
         </Card>
         
@@ -223,7 +223,7 @@ export function DashboardContent() {
                 />
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 truncate" title={`Este mes: $${formatCurrency(deudaTotalEsteMes)} | Total en ${entidadesConDeuda} registro(s)`}>
+            <p className="text-xs text-sm text-muted-foreground truncate" title={`Este mes: $${formatCurrency(deudaTotalEsteMes)} | Total en ${entidadesConDeuda} registro(s)`}>
               Este mes: ${formatCurrency(deudaTotalEsteMes)}
             </p>
           </CardContent>
@@ -240,7 +240,7 @@ export function DashboardContent() {
             <div className="text-2xl font-bold capitalize truncate" title={deudaVencimientoNombre || (deudasVencidas.length > 0 ? "Deudas Vencidas" : "Al día")}>
               {isDebtsLoading ? "..." : (deudaVencimientoNombre || (deudasVencidas.length > 0 ? "Deudas Vencidas" : "Al día"))}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 truncate">
+            <p className="text-xs text-sm text-muted-foreground truncate">
               {deudaVencimientoNombre 
                 ? `Vence: ${deudaVencimientoTexto}` 
                 : (deudasVencidas.length > 0 ? "Atiende tus pagos atrasados" : "No hay pagos urgentes")
