@@ -33,7 +33,7 @@ export function DashboardContent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Calcular KPIs de Flujo de Caja
-  const { totalSalidasMes, totalEntradasMes, balanceMes, ultimosMovimientos } = useMemo(() => {
+  const { totalSalidasMes, totalEntradasMes, balanceTotal, ultimosMovimientos } = useMemo(() => {
     let gastosMes = 0;
     let ingresosMes = 0;
     let pagosEmitidosMes = 0;
@@ -82,12 +82,38 @@ export function DashboardContent() {
 
     const totalEntradas = ingresosMes + pagosRecibidosMes;
     const totalSalidas = gastosMes + pagosEmitidosMes;
-    const balance = totalEntradas - totalSalidas;
+    
+    let totalGastosHistorico = 0;
+    let totalIngresosHistorico = 0;
+    let totalPagosEmitidosHistorico = 0;
+    let totalPagosRecibidosHistorico = 0;
+
+    if (expenses) expenses.forEach(e => totalGastosHistorico += e.amount);
+    if (incomes) incomes.forEach(i => totalIngresosHistorico += i.amount);
+    if (debts) {
+      debts.forEach(d => {
+        // Solo se toman en cuenta los abonos (pagos reales), NO el monto principal de la deuda
+        if (d.debt_payments) {
+          d.debt_payments.forEach(p => {
+            if (d.type === "payable") {
+              totalPagosEmitidosHistorico += p.amount; // Dinero que salió para pagar la deuda
+            } else {
+              totalPagosRecibidosHistorico += p.amount; // Dinero que entró porque me pagaron
+            }
+          });
+        }
+      });
+    }
+
+    const totalEntradasHistorico = totalIngresosHistorico + totalPagosRecibidosHistorico;
+    const totalSalidasHistorico = totalGastosHistorico + totalPagosEmitidosHistorico;
+    const balanceTotal = totalEntradasHistorico - totalSalidasHistorico;
+
 
     return { 
       totalSalidasMes: totalSalidas, 
       totalEntradasMes: totalEntradas,
-      balanceMes: balance,
+      balanceTotal,
       ultimosMovimientos: movimientos,
     };
   }, [expenses, incomes, debts]);
@@ -251,10 +277,10 @@ export function DashboardContent() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold flex ${balanceMes > 0 ? "text-emerald-500" : balanceMes < 0 ? "text-red-500" : ""}`}>
+            <div className={`text-2xl font-bold flex ${balanceTotal > 0 ? "text-emerald-500" : balanceTotal < 0 ? "text-red-500" : ""}`}>
               {isIncomesLoading || isExpensesLoading || isDebtsLoading ? "..." : (
                 <NumberFlow 
-                  value={Math.abs(balanceMes)} 
+                  value={balanceTotal} 
                   locales="es-AR" 
                   format={{ style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }} 
                   animated={true}

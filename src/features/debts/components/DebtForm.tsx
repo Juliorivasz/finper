@@ -1,11 +1,12 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { debtSchema, DebtFormValues } from "../schemas/debtSchema";
 import { useCreateDebt } from "../hooks/useDebts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AnimatedAmountInput } from "@/components/ui/animated-amount-input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,7 +18,7 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
   const { mutate: createDebt, isPending } = useCreateDebt();
 
   const {
-    register,
+    register, control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -62,12 +63,17 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Monto</label>
-        <Input 
-          type="number" 
-          step="0.01" 
-          placeholder="0.00" 
-          {...register("amount", { valueAsNumber: true })} 
+        <label className="text-sm font-medium text-foreground">Monto</label>
+        <Controller
+          name="amount"
+          control={control}
+          render={({ field }) => (
+            <AnimatedAmountInput 
+              value={field.value} 
+              onChange={field.onChange} 
+              autoFocus 
+            />
+          )}
         />
         {errors.amount && <p className="text-red-500 text-sm">{errors.amount.message}</p>}
       </div>

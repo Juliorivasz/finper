@@ -1,11 +1,12 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { expenseSchema, ExpenseFormValues } from "../schemas/expenseSchema";
 import { useCreateExpense, useGetCategories } from "../hooks/useExpenses";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AnimatedAmountInput } from "@/components/ui/animated-amount-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,7 +20,7 @@ export function ExpenseForm({ onSuccessCallback }: ExpenseFormProps) {
   const { mutate: createExpense, isPending } = useCreateExpense();
 
   const {
-    register,
+    register, control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -58,16 +59,17 @@ export function ExpenseForm({ onSuccessCallback }: ExpenseFormProps) {
           {/* Monto */}
           <div className="space-y-1">
             <label className="text-sm font-medium text-foreground">Monto</label>
-            <div className="relative">
-              <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                className="pl-7"
-                {...register("amount", { valueAsNumber: true })}
-              />
-            </div>
+        <Controller
+          name="amount"
+          control={control}
+          render={({ field }) => (
+            <AnimatedAmountInput 
+              value={field.value} 
+              onChange={field.onChange} 
+              autoFocus 
+            />
+          )}
+        />
             {errors.amount && (
               <p className="text-sm text-red-500">{errors.amount.message}</p>
             )}
