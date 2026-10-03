@@ -17,11 +17,14 @@ import Link from "next/link";
 import { IncomeForm } from "./IncomeForm";
 import { Income } from "../types";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
+import { useBalance } from "@/hooks/useBalance";
+import NumberFlow from "@number-flow/react";
 
 const ITEMS_PER_PAGE = 8;
 
 export function IncomeList() {
   const { data: incomes, isLoading } = useGetIncomes();
+  const { ingresosMes, balanceTotal, isLoading: isBalanceLoading } = useBalance();
   const { mutate: deleteIncome, isPending: isDeleting } = useDeleteIncome();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,6 +104,25 @@ export function IncomeList() {
 
   return (
     <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center bg-card p-4 rounded-xl border border-border shadow-sm gap-4 mb-6">
+          
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 bg-muted/30 p-3 rounded-lg w-full sm:w-auto">
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Ingresos del mes</span>
+              <span className="text-xl font-bold text-emerald-500">
+                {isBalanceLoading ? "..." : <NumberFlow value={ingresosMes} locales="es-AR" format={{ style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }} />}
+              </span>
+            </div>
+            <div className="hidden sm:block w-px bg-border"></div>
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Balance Total</span>
+              <span className={`text-xl font-bold ${balanceTotal > 0 ? "text-emerald-500" : balanceTotal < 0 ? "text-red-500" : "text-foreground"}`}>
+                {isBalanceLoading ? "..." : <NumberFlow value={balanceTotal} locales="es-AR" format={{ style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }} />}
+              </span>
+            </div>
+          </div>
+        </div>
+
       <Dialog open={!!incomeToDelete} onOpenChange={(open) => !open && setIncomeToDelete(null)}>
         <DialogContent>
           <DialogHeader>
@@ -167,7 +189,7 @@ export function IncomeList() {
           </div>
           
         <div className="flex flex-col sm:flex-row w-full md:w-auto items-center justify-end gap-2">
-          <Link href="/incomes/charts" className="w-full sm:w-auto">
+          <Link href="/ingresos/charts" className="w-full sm:w-auto">
             <Button variant="outline" className="w-full sm:w-auto gap-2">
               <PieChartIcon className="h-4 w-4" />
               Gráficos

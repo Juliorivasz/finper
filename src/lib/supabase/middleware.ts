@@ -43,7 +43,7 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Proteger la ruta del dashboard: Si no hay usuario, mandarlo al login
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (!user && request.nextUrl.pathname.startsWith('/resumen')) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -52,7 +52,7 @@ export async function updateSession(request: NextRequest) {
   // Si ya está logueado e intenta ir a la página de login, mandarlo al dashboard
   if (user && request.nextUrl.pathname.startsWith('/login')) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/resumen'
     return NextResponse.redirect(url)
   }
 

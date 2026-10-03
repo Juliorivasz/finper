@@ -15,7 +15,7 @@ export function useGetIncomes() {
         .from("incomes")
         .select("*")
         .eq("user_id", user.id)
-        .order("date", { ascending: false });
+        .order("date", { ascending: false }).order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as Income[];

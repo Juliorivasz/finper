@@ -43,7 +43,7 @@ export function LoginForm() {
         if (error) throw new Error(error.message);
         
         toast.success("¡Bienvenido de vuelta!");
-        router.push("/dashboard"); // Redirigir al panel principal
+        router.push("/resumen"); // Redirigir al panel principal
       } else {
         // Registro manual
         const { error } = await supabase.auth.signUp({

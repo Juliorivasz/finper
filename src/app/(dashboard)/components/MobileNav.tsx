@@ -106,40 +106,40 @@ export function MobileNav() {
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border flex justify-around items-center h-16 z-50 px-2 pb-safe">
         <Link 
-          href="/dashboard" 
+          href="/resumen" 
           className={cn(
             "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
-            pathname === "/dashboard" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            pathname === "/resumen" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           )}
         >
           <LayoutDashboard className="w-5 h-5" />
           <span className="text-[10px] font-medium">Resumen</span>
         </Link>
         <Link 
-          href="/incomes" 
+          href="/ingresos" 
           className={cn(
             "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
-            pathname === "/incomes" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            pathname === "/ingresos" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           )}
         >
           <ArrowDownToLine className="w-5 h-5 text-emerald-500" />
           <span className="text-[10px] font-medium">Ingresos</span>
         </Link>
         <Link 
-          href="/expenses" 
+          href="/gastos" 
           className={cn(
             "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
-            pathname === "/expenses" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            pathname === "/gastos" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           )}
         >
           <Wallet className="w-5 h-5" />
           <span className="text-[10px] font-medium">Gastos</span>
         </Link>
         <Link 
-          href="/debts" 
+          href="/deudas" 
           className={cn(
             "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors",
-            pathname === "/debts" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            pathname === "/deudas" ? "text-primary" : "text-muted-foreground hover:text-foreground"
           )}
         >
           <CreditCard className="w-5 h-5" />

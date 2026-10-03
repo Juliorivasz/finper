@@ -215,11 +215,11 @@ export function DebtList() {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-foreground">Registro Detallado</h2>
+        
         
         {/* VISTA DESKTOP */}
         <div className="hidden sm:flex gap-2">
-          <Link href="/debts/charts">
+          <Link href="/deudas/charts">
             <Button variant="outline" className="gap-2">
               <PieChartIcon className="h-4 w-4" /> Gráficos
             </Button>
@@ -241,7 +241,7 @@ export function DebtList() {
 
         {/* VISTA MOBILE */}
         <div className="flex sm:hidden gap-2 w-full">
-          <Link href="/debts/charts" className="flex-1">
+          <Link href="/deudas/charts" className="flex-1">
             <Button variant="outline" className="w-full gap-2">
               <PieChartIcon className="h-4 w-4" /> Gráficos
             </Button>

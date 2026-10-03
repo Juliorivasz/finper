@@ -12,6 +12,8 @@ import { Search, Trash2, Loader2, CalendarIcon, X, ChevronLeft, ChevronRight, Pl
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/utils";
+import { useBalance } from "@/hooks/useBalance";
+import NumberFlow from "@number-flow/react";
 
 import { es } from "date-fns/locale";
 import Link from "next/link";
@@ -22,6 +24,7 @@ const ITEMS_PER_PAGE = 8; // Mostramos 8 por página para no saturar la pantalla
 
 export function ExpenseList() {
   const { data: expenses, isLoading } = useGetExpenses();
+  const { gastosMes, balanceTotal, isLoading: isBalanceLoading } = useBalance();
   const { mutate: deleteExpense, isPending: isDeleting } = useDeleteExpense();
   const router = useRouter();
   
@@ -110,6 +113,25 @@ export function ExpenseList() {
 
   return (
     <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-end items-start sm:items-center bg-card p-4 rounded-xl border border-border shadow-sm gap-4 mb-6">
+          
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 bg-muted/30 p-3 rounded-lg w-full sm:w-auto">
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Gastos del mes</span>
+              <span className="text-xl font-bold text-red-500">
+                {isBalanceLoading ? "..." : <NumberFlow value={gastosMes} locales="es-AR" format={{ style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }} />}
+              </span>
+            </div>
+            <div className="hidden sm:block w-px bg-border"></div>
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Balance Total</span>
+              <span className={`text-xl font-bold ${balanceTotal > 0 ? "text-emerald-500" : balanceTotal < 0 ? "text-red-500" : "text-foreground"}`}>
+                {isBalanceLoading ? "..." : <NumberFlow value={balanceTotal} locales="es-AR" format={{ style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }} />}
+              </span>
+            </div>
+          </div>
+        </div>
+
       {/* Modal Personalizado de Confirmación */}
       <Dialog open={!!expenseToDelete} onOpenChange={(open) => !open && setExpenseToDelete(null)}>
         <DialogContent>
@@ -180,7 +202,7 @@ export function ExpenseList() {
           
         <div className="flex flex-col sm:flex-row w-full md:w-auto items-center justify-end gap-2">
           
-          <Button variant="outline" onClick={() => router.push("/expenses/charts")} className="w-full sm:w-auto gap-2">
+          <Button variant="outline" onClick={() => router.push("/gastos/charts")} className="w-full sm:w-auto gap-2">
             <PieChartIcon className="h-4 w-4" />
             Gráficos
           </Button>
