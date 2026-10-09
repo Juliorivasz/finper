@@ -13,7 +13,7 @@ import { es } from "date-fns/locale";
 import Link from "next/link";
 
 import { PaymentForm } from "./PaymentForm";
-import { formatCurrency, parseLocalDate } from "@/lib/utils";
+import { formatCurrency, parseLocalDate, calculateOverdueInterest } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 8; // Máximo 8 por página para móvil
 
@@ -33,18 +33,39 @@ export function DebtList() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("due_date_asc");
 
-  // Calcular totales sumando pagos
+    // Calcular totales sumando pagos e intereses
   const processedDebts = useMemo(() => {
     if (!debts) return [];
     
     return debts.map(debt => {
-      // Ordenar pagos por fecha desc (más reciente primero)
+      // Ordenar pagos por fecha desc
       const sortedPayments = [...(debt.debt_payments || [])].sort((a, b) => 
         parseLocalDate(b.date).getTime() - parseLocalDate(a.date).getTime()
       );
       const paid = sortedPayments.reduce((sum, p) => sum + p.amount, 0);
-      const pending = debt.amount - paid;
-      return { ...debt, debt_payments: sortedPayments, paid, pending };
+      
+      const basePending = debt.amount - paid;
+      
+      let interest = 0;
+      let finalPending = basePending;
+      let daysLate = 0;
+      
+      if (basePending > 0) {
+        const result = calculateOverdueInterest(basePending, debt.due_date, debt.interest_rate);
+        interest = result.interestAmount;
+        finalPending = result.totalAmount;
+        daysLate = result.daysOverdue;
+      }
+      
+      return { 
+        ...debt, 
+        debt_payments: sortedPayments, 
+        paid, 
+        pending: finalPending,
+        originalPending: basePending,
+        interestAmount: interest,
+        daysLate
+      };
     });
   }, [debts]);
 
@@ -341,8 +362,13 @@ export function DebtList() {
                     <td className="px-6 py-4 text-muted-foreground text-right text-sm">
                       ${formatCurrency(debt.amount)}
                     </td>
-                    <td className="px-6 py-4 font-bold text-right text-primary text-sm">
-                      ${formatCurrency(Math.max(0, debt.pending))}
+                    <td className="px-6 py-4 text-right flex flex-col items-end justify-center h-full space-y-0.5">
+                      <span className="font-bold text-primary text-sm">$\{formatCurrency(Math.max(0, debt.pending))}</span>
+                      {debt.interestAmount > 0 && (
+                        <span className="text-[11px] text-red-500 font-medium">
+                          +$\{formatCurrency(debt.interestAmount)} mora
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -404,8 +430,13 @@ export function DebtList() {
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="font-bold text-primary whitespace-nowrap text-right text-lg leading-none">
-                        ${formatCurrency(Math.max(0, debt.pending))}
+                        $\{formatCurrency(Math.max(0, debt.pending))}
                       </span>
+                      {debt.interestAmount > 0 && (
+                        <span className="text-[11px] text-red-500 font-medium mt-1">
+                          +$\{formatCurrency(debt.interestAmount)} de mora
+                        </span>
+                      )}
                       <span className="text-xs text-muted-foreground mt-1">
                         de ${formatCurrency(debt.amount)}
                       </span>

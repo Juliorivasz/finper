@@ -18,6 +18,7 @@ export interface Debt {
   description: string;
   due_date: string | null;
   status: "pending" | "paid";
+  interest_rate?: number | null;
   created_at: string;
   debt_payments?: DebtPayment[];
 }
@@ -86,6 +87,7 @@ export function useCreateDebt() {
           amount: newDebt.amount,
           description: newDebt.description,
           due_date: newDebt.due_date || null,
+          interest_rate: newDebt.interest_rate || null,
           status: "pending",
         }])
         .select();

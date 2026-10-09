@@ -6,9 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number): string {
-  // Tomar valor absoluto para que no tenga símbolos de menos "-" (se confía en el color)
   const absoluteAmount = Math.abs(amount || 0);
-  // 'es-AR' o 'es-ES' usan punto para miles y coma para decimales (ej: 1.234,56)
   return absoluteAmount.toLocaleString("es-AR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -17,9 +15,43 @@ export function formatCurrency(amount: number): string {
 
 export function parseLocalDate(dateString: string | null | undefined): Date {
   if (!dateString) return new Date();
-  // Extraer solo la parte "YYYY-MM-DD"
   const datePart = dateString.split('T')[0];
   const [year, month, day] = datePart.split('-');
-  // Construir la fecha usando los componentes locales del navegador
   return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+export function calculateOverdueInterest(
+  originalAmount: number,
+  dueDate: string | null | undefined,
+  tna: number | null | undefined
+): { interestAmount: number; daysOverdue: number; totalAmount: number } {
+  if (!dueDate || !tna || tna <= 0) {
+    return { interestAmount: 0, daysOverdue: 0, totalAmount: originalAmount };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Start of today
+
+  const due = parseLocalDate(dueDate);
+  due.setHours(0, 0, 0, 0);
+
+  // No interest if not overdue
+  if (today <= due) {
+    return { interestAmount: 0, daysOverdue: 0, totalAmount: originalAmount };
+  }
+
+  // Calculate difference in days
+  const diffTime = today.getTime() - due.getTime();
+  const daysOverdue = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  // TNA logic: (TNA / 365) = daily rate percentage
+  // Example: TNA 36.5% -> Daily Rate 0.1% -> 0.001
+  const dailyRate = (tna / 100) / 365;
+  const interestAmount = originalAmount * dailyRate * daysOverdue;
+  
+  return {
+    interestAmount,
+    daysOverdue,
+    totalAmount: originalAmount + interestAmount,
+  };
 }

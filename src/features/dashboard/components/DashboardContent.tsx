@@ -12,7 +12,7 @@ import { useGetIncomes } from "@/features/incomes/hooks/useIncomes";
 import { CategoryChart } from "./CategoryChart";
 import { DebtChart } from "./DebtChart";
 import { useGetDebts } from "@/features/debts/hooks/useDebts";
-import { formatCurrency, parseLocalDate } from "@/lib/utils";
+import { formatCurrency, parseLocalDate, calculateOverdueInterest } from "@/lib/utils";
 import { useBalance } from "@/hooks/useBalance";
 import NumberFlow from "@number-flow/react";
 
