@@ -343,8 +343,10 @@ export function DebtList() {
                       <div className="text-xs mt-1 truncate flex items-center gap-1">
                         <span className="text-muted-foreground">{debt.type === "payable" ? "Yo debo" : "Me deben"} •</span>
                         <span className={isOverdue ? "text-red-500 font-bold" : "text-muted-foreground"}>
-                          Vence: {debt.due_date ? parseLocalDate(debt.due_date).toLocaleDateString(undefined) : 'S/F'}
-                          {isOverdue && ` (hace ${formatDistanceStrict(parseLocalDate(debt.due_date), today, { locale: es })})`}
+                          {isOverdue 
+                            ? `Venció hace ${formatDistanceStrict(parseLocalDate(debt.due_date!), today, { locale: es })}`
+                            : `Vence: ${debt.due_date ? parseLocalDate(debt.due_date).toLocaleDateString(undefined) : 'S/F'}`
+                          }
                         </span>
                       </div>
                     </td>
@@ -363,10 +365,10 @@ export function DebtList() {
                       ${formatCurrency(debt.amount)}
                     </td>
                     <td className="px-6 py-4 text-right flex flex-col items-end justify-center h-full space-y-0.5">
-                      <span className="font-bold text-primary text-sm">$\{formatCurrency(Math.max(0, debt.pending))}</span>
+                      <span className="font-bold text-primary text-sm">${formatCurrency(Math.max(0, debt.pending))}</span>
                       {debt.interestAmount > 0 && (
                         <span className="text-[11px] text-red-500 font-medium">
-                          +$\{formatCurrency(debt.interestAmount)} mora
+                          +${formatCurrency(debt.interestAmount)} mora
                         </span>
                       )}
                     </td>
@@ -420,21 +422,23 @@ export function DebtList() {
                       <span className="font-semibold text-foreground truncate">
                         {debt.description}
                       </span>
-                      <span className="text-sm truncate mt-0.5 flex gap-1 items-center">
+                      <span className="text-sm flex flex-wrap gap-x-1 items-center mt-0.5 leading-tight">
                         <span className="text-muted-foreground">{debt.type === "payable" ? "Yo debo" : "Me deben"} •</span>
                         <span className={isOverdue ? "text-red-500 font-bold" : "text-muted-foreground"}>
-                          Vence: {debt.due_date ? parseLocalDate(debt.due_date).toLocaleDateString(undefined) : 'S/F'}
-                          {isOverdue && ` (hace ${formatDistanceStrict(parseLocalDate(debt.due_date), today, { locale: es })})`}
+                          {isOverdue 
+                            ? `Venció hace ${formatDistanceStrict(parseLocalDate(debt.due_date!), today, { locale: es })}`
+                            : `Vence: ${debt.due_date ? parseLocalDate(debt.due_date).toLocaleDateString(undefined) : 'S/F'}`
+                          }
                         </span>
                       </span>
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="font-bold text-primary whitespace-nowrap text-right text-lg leading-none">
-                        $\{formatCurrency(Math.max(0, debt.pending))}
+                        ${formatCurrency(Math.max(0, debt.pending))}
                       </span>
                       {debt.interestAmount > 0 && (
                         <span className="text-[11px] text-red-500 font-medium mt-1">
-                          +$\{formatCurrency(debt.interestAmount)} de mora
+                          +${formatCurrency(debt.interestAmount)} de mora
                         </span>
                       )}
                       <span className="text-xs text-muted-foreground mt-1">
