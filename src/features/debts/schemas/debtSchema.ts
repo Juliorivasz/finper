@@ -9,6 +9,7 @@ export const debtSchema = z.object({
   }).positive("El monto debe ser mayor a 0"),
   description: z.string().min(1, "La descripción es obligatoria"),
   due_date: z.string().optional(),
+  interest_rate: z.number().min(0).max(1000).optional().nullable(),
 });
 
 export type DebtFormValues = z.infer<typeof debtSchema>;

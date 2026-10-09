@@ -30,6 +30,7 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
       type: "payable",
       description: "",
       due_date: "",
+      interest_rate: "" as unknown as number,
     },
   });
 
@@ -39,6 +40,7 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
         ...data,
         amount: Number(data.amount),
         due_date: data.due_date ? new Date(data.due_date).toISOString() : undefined,
+        interest_rate: data.interest_rate ? Number(data.interest_rate) : null,
       },
       {
         onSuccess: () => {
@@ -100,16 +102,36 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
         </div>
       </div>
 
-      {/* Descripción */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Descripción</label>
-        <Input 
-          placeholder="Ej: Préstamo a Juan..." 
-          {...register("description")} 
-        />
-        {errors.description && (
-          <p className="text-sm text-red-500">{errors.description.message}</p>
-        )}
+      <div className="grid grid-cols-2 gap-4">
+        {/* Descripción */}
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">Descripción</label>
+          <Input 
+            placeholder="Ej: Préstamo a Juan..." 
+            {...register("description")} 
+          />
+          {errors.description && (
+            <p className="text-sm text-red-500">{errors.description.message}</p>
+          )}
+        </div>
+        
+        {/* Tasa por Mora */}
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">Tasa Mora TNA % (Opcional)</label>
+          <div className="relative">
+            <Input 
+              type="number"
+              step="0.01"
+              placeholder="Ej: 36.5" 
+              className="pr-8"
+              {...register("interest_rate", { valueAsNumber: true })} 
+            />
+            <span className="absolute right-3 top-2.5 text-sm text-muted-foreground pointer-events-none">%</span>
+          </div>
+          {errors.interest_rate && (
+            <p className="text-sm text-red-500">{errors.interest_rate.message}</p>
+          )}
+        </div>
       </div>
 
       <Button type="submit" className="w-full mt-2" disabled={isPending}>
