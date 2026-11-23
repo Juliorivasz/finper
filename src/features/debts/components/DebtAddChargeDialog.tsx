@@ -105,11 +105,11 @@ export function DebtAddChargeDialog({ debt, open, onOpenChange }: DebtAddChargeD
             />
           </FormField>
 
-          <div className="flex gap-2 pt-2">
-            <Button type="button" variant="outline" className="w-1/2" onClick={() => onOpenChange(false)}>
+          <div className="flex gap-2.5 pt-2">
+            <Button type="button" variant="outline" className="w-1/2 h-11 rounded-xl cursor-pointer" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" className="w-1/2" disabled={isPending}>
+            <Button type="submit" className="w-1/2 h-11 font-semibold rounded-xl shadow-md shadow-primary/20 hover:shadow-primary/30 cursor-pointer" disabled={isPending}>
               {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : "Sumar al Saldo"}
             </Button>
           </div>

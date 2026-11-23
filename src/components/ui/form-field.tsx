@@ -20,18 +20,22 @@ export function FormField({
   ...props
 }: FormFieldProps) {
   return (
-    <div className={cn("space-y-1.5", className)} {...props}>
+    <div className={cn("space-y-1 min-w-0", className)} {...props}>
       {label && (
-        <div className="flex justify-between items-center">
-          <Label className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
+        <div className="flex justify-between items-center gap-1 min-w-0">
+          <Label className="flex items-center gap-0.5 text-xs font-medium text-foreground truncate">
+            <span className="truncate">{label}</span>
+            {required && <span className="text-destructive shrink-0">*</span>}
           </Label>
-          {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+          {hint && <span className="text-[11px] text-muted-foreground shrink-0">{hint}</span>}
         </div>
       )}
       {children}
-      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
+      {error && (
+        <p className="text-[11px] font-medium text-destructive leading-tight">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

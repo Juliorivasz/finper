@@ -41,34 +41,35 @@ export function GlobalAddButton() {
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-md p-4 sm:p-5 gap-3 rounded-xl overflow-x-hidden">
           <DialogHeader>
-            <DialogTitle>Nuevo Registro</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg font-semibold">Nuevo Registro</DialogTitle>
           </DialogHeader>
 
           {/* Segmented Control / Tabs */}
-          <div className="flex bg-muted/60 p-1 rounded-xl gap-1 mb-4 border border-border">
+          <div className="flex bg-muted/60 p-1 rounded-lg gap-1 border border-border">
             {TABS.map(({ id, label, icon: Icon }) => {
               const isSelected = activeTab === id;
               return (
                 <button
                   key={id}
+                  type="button"
                   onClick={() => setActiveTab(id)}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer",
+                    "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-all cursor-pointer",
                     isSelected
                       ? "bg-background text-foreground shadow-sm font-semibold"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
                   <span>{label}</span>
                 </button>
               );
             })}
           </div>
 
-          <div className="mt-2">
+          <div>
             {activeTab === "expense" && <ExpenseForm onSuccessCallback={() => setIsOpen(false)} />}
             {activeTab === "income" && <IncomeForm onSuccessCallback={() => setIsOpen(false)} />}
             {activeTab === "debt" && <DebtForm onSuccessCallback={() => setIsOpen(false)} />}

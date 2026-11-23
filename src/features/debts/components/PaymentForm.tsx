@@ -126,11 +126,11 @@ export function PaymentForm({
         <Input placeholder="Ej: Abono quincenal, amortización capital..." {...register("description")} />
       </FormField>
 
-      <Button type="submit" className="w-full mt-2" disabled={isPending}>
+      <Button type="submit" className="w-full h-11 sm:h-12 text-sm sm:text-base font-semibold rounded-xl shadow-md shadow-primary/20 hover:shadow-primary/30 mt-3 cursor-pointer" disabled={isPending}>
         {isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Registrando...
+            Registrando abono...
           </>
         ) : (
           "Guardar Abono"

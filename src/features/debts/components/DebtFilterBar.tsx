@@ -26,11 +26,11 @@ const TYPE_FILTER_OPTIONS = [
 ];
 
 const MODALITY_FILTER_OPTIONS = [
-  { value: "all", label: "Modalidad: Todas" },
-  { value: "credit_card", label: "Tarjetas de Crédito" },
-  { value: "personal_loan", label: "Préstamos Personales" },
-  { value: "bank_loan", label: "Préstamos Bancarios" },
-  { value: "simple", label: "Entre Personas" },
+  { value: "all", label: "Todas las modalidades" },
+  { value: "credit_card", label: "Tarjetas" },
+  { value: "personal_loan", label: "Préstamos" },
+  { value: "bank_loan", label: "Bancarios" },
+  { value: "simple", label: "Personas" },
 ];
 
 const SORT_BY_OPTIONS = [
@@ -70,7 +70,7 @@ export function DebtFilterBar({
         </div>
 
         {/* Filters and Link */}
-        <div className="flex flex-wrap w-full md:w-auto items-center justify-end gap-2">
+        <div className="flex flex-col sm:flex-row w-full md:w-auto items-center justify-end gap-2">
           <Link href="/deudas/charts" className="w-full sm:w-auto">
             <Button variant="outline" className="w-full sm:w-auto gap-2 cursor-pointer">
               <PieChartIcon className="h-4 w-4" />
@@ -79,21 +79,21 @@ export function DebtFilterBar({
           </Link>
 
           <Select
-            className="w-full sm:w-[130px]"
+            className="w-full sm:w-[120px]"
             value={typeFilter}
             onChange={(e) => onTypeFilterChange(e.target.value)}
             options={TYPE_FILTER_OPTIONS}
           />
 
           <Select
-            className="w-full sm:w-[180px]"
+            className="w-full sm:w-[165px]"
             value={modalityFilter}
             onChange={(e) => onModalityFilterChange(e.target.value)}
             options={MODALITY_FILTER_OPTIONS}
           />
 
           <Select
-            className="w-full sm:w-[190px]"
+            className="w-full sm:w-[185px]"
             value={sortBy}
             onChange={(e) => onSortByChange(e.target.value)}
             options={SORT_BY_OPTIONS}
