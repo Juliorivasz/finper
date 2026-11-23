@@ -6,6 +6,10 @@ import { expenseSchema, ExpenseFormValues } from "../schemas/expenseSchema";
 import { useCreateExpense, useGetCategories } from "../hooks/useExpenses";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { FormField } from "@/components/ui/form-field";
 import { AnimatedAmountInput } from "@/components/ui/animated-amount-input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -55,11 +59,15 @@ export function ExpenseForm({ onSuccessCallback }: ExpenseFormProps) {
     );
   };
 
+  const categoryOptions = categories?.map((cat) => ({
+    value: cat.id,
+    label: cat.name,
+  })) || [];
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Monto */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Monto</label>
+      <FormField label="Monto" error={errors.amount?.message} required>
         <Controller
           name="amount"
           control={control}
@@ -71,66 +79,40 @@ export function ExpenseForm({ onSuccessCallback }: ExpenseFormProps) {
             />
           )}
         />
-        {errors.amount && (
-          <p className="text-sm text-red-500">{errors.amount.message}</p>
-        )}
-      </div>
+      </FormField>
 
       <div className="grid grid-cols-2 gap-4">
         {/* Fecha */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Fecha</label>
+        <FormField label="Fecha" error={errors.date?.message} required>
           <Input type="date" {...register("date")} />
-          {errors.date && (
-            <p className="text-sm text-red-500">{errors.date.message}</p>
-          )}
-        </div>
+        </FormField>
 
         {/* Categoría */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Categoría</label>
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50"
-            {...register("category_id")}
+        <FormField label="Categoría" error={errors.category_id?.message} required>
+          <Select
+            options={categoryOptions}
+            placeholder="Selecciona..."
             disabled={isLoadingCategories}
-          >
-            <option value="">Selecciona...</option>
-            {categories?.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-          {errors.category_id && (
-            <p className="text-sm text-red-500">{errors.category_id.message}</p>
-          )}
-        </div>
+            {...register("category_id")}
+          />
+        </FormField>
       </div>
 
       {/* Descripción */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Descripción (Opcional)</label>
+      <FormField label="Descripción" hint="Opcional" error={errors.description?.message}>
         <Input
           type="text"
           placeholder="Ej: Cena con amigos..."
           {...register("description")}
         />
-      </div>
+      </FormField>
 
       {/* Gasto Recurrente */}
-      <div className="flex items-center space-x-2 pt-1">
-        <input
-          type="checkbox"
-          id="is_recurring"
-          className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
-          {...register("is_recurring")}
-        />
-        <label
-          htmlFor="is_recurring"
-          className="text-sm font-medium text-foreground cursor-pointer"
-        >
+      <div className="flex items-center gap-2 pt-1">
+        <Checkbox id="is_recurring" {...register("is_recurring")} />
+        <Label htmlFor="is_recurring" className="cursor-pointer font-normal">
           Es un gasto recurrente mensual
-        </label>
+        </Label>
       </div>
 
       <Button type="submit" className="w-full mt-2" disabled={isPending}>

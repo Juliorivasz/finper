@@ -3,8 +3,9 @@
 import { useForm, Controller } from "react-hook-form";
 import { useCreateDebtPayment } from "../hooks/useDebts";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
 import { AnimatedAmountInput } from "@/components/ui/animated-amount-input";
+import { formatCurrency } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,11 +21,11 @@ interface PaymentValues {
 
 export function PaymentForm({ debtId, maxAmount, onSuccessCallback }: PaymentFormProps) {
   const { mutate: addPayment, isPending } = useCreateDebtPayment();
-  const { register, control, handleSubmit, reset, formState: { errors } } = useForm<PaymentValues>();
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<PaymentValues>();
 
   const onSubmit = (data: PaymentValues) => {
     if (data.amount <= 0 || data.amount > maxAmount) {
-      toast.error(`El monto debe ser entre $0.01 y $${maxAmount.toFixed(2)}`);
+      toast.error(`El monto debe ser entre $0.01 y ${formatCurrency(maxAmount)}`);
       return;
     }
     
@@ -42,8 +43,12 @@ export function PaymentForm({ debtId, maxAmount, onSuccessCallback }: PaymentFor
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Monto del abono</label>
+      <FormField 
+        label="Monto del abono" 
+        hint={`Máx: ${formatCurrency(maxAmount)}`}
+        error={errors.amount ? "Ingresa un monto válido" : undefined}
+        required
+      >
         <Controller
           name="amount"
           control={control}
@@ -56,9 +61,7 @@ export function PaymentForm({ debtId, maxAmount, onSuccessCallback }: PaymentFor
             />
           )}
         />
-        {errors.amount && <p className="text-red-500 text-sm">Ingresa un monto válido</p>}
-        <p className="text-xs text-muted-foreground">Monto máximo: ${maxAmount.toFixed(2)}</p>
-      </div>
+      </FormField>
 
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? (

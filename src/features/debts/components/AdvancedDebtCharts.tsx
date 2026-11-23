@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { useGetDebts } from "../hooks/useDebts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
+import { Label as UiLabel } from "@/components/ui/label";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend, Label } from "recharts";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 
@@ -105,17 +107,17 @@ export function AdvancedDebtCharts() {
       {/* Filtros */}
       <Card className="p-4 bg-card border-border">
         <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="w-full sm:w-64">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Tipo de Deuda</label>
-            <select 
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none"
+          <div className="w-full sm:w-64 space-y-1">
+            <UiLabel className="text-xs text-muted-foreground">Tipo de Deuda</UiLabel>
+            <Select 
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="all">Todas (Por Pagar y Cobrar)</option>
-              <option value="payable">Solo mis deudas (Por Pagar)</option>
-              <option value="receivable">Deudas de otros (Por Cobrar)</option>
-            </select>
+              options={[
+                { value: "all", label: "Todas (Por Pagar y Cobrar)" },
+                { value: "payable", label: "Solo mis deudas (Por Pagar)" },
+                { value: "receivable", label: "Deudas de otros (Por Cobrar)" },
+              ]}
+            />
           </div>
           
           <div className="ml-auto flex flex-col sm:flex-row gap-6 items-end">

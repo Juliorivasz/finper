@@ -3,12 +3,11 @@
 import { useState, useMemo } from "react";
 import { useGetExpenses } from "../hooks/useExpenses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid, PieChart, Pie, Legend } from "recharts";
+import { Select } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { DonutChart } from "@/components/ui/DonutChart";
-
-// Colores consistentes
-const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 
 export function AdvancedExpenseCharts() {
   const { data: expenses, isLoading } = useGetExpenses();
@@ -65,23 +64,20 @@ export function AdvancedExpenseCharts() {
       let key = "";
       const d = parseLocalDate(exp.date);
       if (timeFilter === "current_month" || timeFilter === "last_month") {
-        // Agrupar por día
         key = d.toLocaleDateString("es-AR", { day: '2-digit', month: '2-digit' });
       } else {
-        // Agrupar por mes
         key = d.toLocaleDateString("es-AR", { month: 'short', year: 'numeric' });
       }
       grouped[key] = (grouped[key] || 0) + exp.amount;
     });
 
-    // Ordenar cronológicamente (aprox para simplificar, en un caso real se ordenan las fechas)
     return Object.entries(grouped)
       .map(([date, amount]) => ({ date, amount }));
   }, [filteredExpenses, timeFilter]);
 
   // Datos para el gráfico de torta (Distribución de categorías)
   const categoryData = useMemo(() => {
-    if (categoryFilter !== "all") return []; // No tiene sentido si ya filtramos 1 sola categoría
+    if (categoryFilter !== "all") return [];
     
     const grouped: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
@@ -101,32 +97,30 @@ export function AdvancedExpenseCharts() {
       {/* Filtros */}
       <Card className="p-4 bg-card border-border">
         <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="w-full sm:w-64">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Periodo</label>
-            <select 
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          <div className="w-full sm:w-64 space-y-1">
+            <Label className="text-xs text-muted-foreground">Periodo</Label>
+            <Select 
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value)}
-            >
-              <option value="current_month">Este Mes</option>
-              <option value="last_month">Mes Pasado</option>
-              <option value="this_year">Este Año</option>
-              <option value="all_time">Todo el Histórico</option>
-            </select>
+              options={[
+                { value: "current_month", label: "Este Mes" },
+                { value: "last_month", label: "Mes Pasado" },
+                { value: "this_year", label: "Este Año" },
+                { value: "all_time", label: "Todo el Histórico" },
+              ]}
+            />
           </div>
           
-          <div className="w-full sm:w-64">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoría (Entidad)</label>
-            <select 
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          <div className="w-full sm:w-64 space-y-1">
+            <Label className="text-xs text-muted-foreground">Categoría (Entidad)</Label>
+            <Select 
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="all">Todas las Categorías</option>
-              {categories.map(c => (
-                <option key={c as string} value={c as string}>{c as string}</option>
-              ))}
-            </select>
+              options={[
+                { value: "all", label: "Todas las Categorías" },
+                ...categories.map(c => ({ value: c as string, label: c as string })),
+              ]}
+            />
           </div>
           
           <div className="ml-auto flex flex-col items-end">

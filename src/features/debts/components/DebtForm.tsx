@@ -6,6 +6,8 @@ import { debtSchema, DebtFormValues } from "../schemas/debtSchema";
 import { useCreateDebt } from "../hooks/useDebts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { FormField } from "@/components/ui/form-field";
 import { AnimatedAmountInput } from "@/components/ui/animated-amount-input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -13,6 +15,11 @@ import { toast } from "sonner";
 interface DebtFormProps {
   onSuccessCallback?: () => void;
 }
+
+const DEBT_TYPE_OPTIONS = [
+  { value: "payable", label: "Por Pagar" },
+  { value: "receivable", label: "Por Cobrar" },
+];
 
 export function DebtForm({ onSuccessCallback }: DebtFormProps) {
   const { mutate: createDebt, isPending } = useCreateDebt();
@@ -58,8 +65,7 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Monto */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Monto</label>
+      <FormField label="Monto" error={errors.amount?.message} required>
         <Controller
           name="amount"
           control={control}
@@ -71,53 +77,34 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
             />
           )}
         />
-        {errors.amount && (
-          <p className="text-sm text-red-500">{errors.amount.message}</p>
-        )}
-      </div>
+      </FormField>
 
       <div className="grid grid-cols-2 gap-4">
         {/* Fecha de vencimiento */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Límite (Opcional)</label>
+        <FormField label="Límite" hint="Opcional" error={errors.due_date?.message}>
           <Input type="date" {...register("due_date")} />
-          {errors.due_date && (
-            <p className="text-sm text-red-500">{errors.due_date.message}</p>
-          )}
-        </div>
+        </FormField>
 
         {/* Tipo de deuda */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Tipo de Deuda</label>
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50"
+        <FormField label="Tipo de Deuda" error={errors.type?.message} required>
+          <Select
+            options={DEBT_TYPE_OPTIONS}
             {...register("type")}
-          >
-            <option value="payable">Por Pagar</option>
-            <option value="receivable">Por Cobrar</option>
-          </select>
-          {errors.type && (
-            <p className="text-sm text-red-500">{errors.type.message}</p>
-          )}
-        </div>
+          />
+        </FormField>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         {/* Descripción */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Descripción</label>
+        <FormField label="Descripción" error={errors.description?.message} required>
           <Input 
             placeholder="Ej: Préstamo a Juan..." 
             {...register("description")} 
           />
-          {errors.description && (
-            <p className="text-sm text-red-500">{errors.description.message}</p>
-          )}
-        </div>
+        </FormField>
         
         {/* Tasa por Mora */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Tasa Mora TNA % (Opcional)</label>
+        <FormField label="Tasa Mora TNA" hint="% Opcional" error={errors.interest_rate?.message}>
           <div className="relative">
             <Input 
               type="number"
@@ -128,10 +115,7 @@ export function DebtForm({ onSuccessCallback }: DebtFormProps) {
             />
             <span className="absolute right-3 top-2.5 text-sm text-muted-foreground pointer-events-none">%</span>
           </div>
-          {errors.interest_rate && (
-            <p className="text-sm text-red-500">{errors.interest_rate.message}</p>
-          )}
-        </div>
+        </FormField>
       </div>
 
       <Button type="submit" className="w-full mt-2" disabled={isPending}>
