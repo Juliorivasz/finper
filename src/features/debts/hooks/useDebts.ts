@@ -1,27 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { DebtFormValues } from "../schemas/debtSchema";
+import { DebtFormValues, DebtChargeValues } from "../schemas/debtSchema";
+import { Debt, DebtPayment, DebtModality, DebtCardBrand, DebtMovementType } from "../types";
 
-export interface DebtPayment {
-  id: string;
-  debt_id: string;
-  amount: number;
-  date: string;
-  created_at: string;
-}
-
-export interface Debt {
-  id: string;
-  user_id: string;
-  type: "payable" | "receivable";
-  amount: number;
-  description: string;
-  due_date: string | null;
-  status: "pending" | "paid";
-  interest_rate?: number | null;
-  created_at: string;
-  debt_payments?: DebtPayment[];
-}
+export type { Debt, DebtPayment, DebtModality, DebtCardBrand, DebtMovementType };
 
 export function useGetDebts() {
   return useQuery({
@@ -44,29 +26,38 @@ export function useGetDebts() {
   });
 }
 
-export function useCreateDebtPayment() {
-  const queryClient = useQueryClient();
+/**
+ * Hook para obtener las tarjetas registradas previamente por el usuario
+ */
+export function useGetSavedCards() {
+  const { data: debts } = useGetDebts();
   
-  return useMutation({
-    mutationFn: async ({ debt_id, amount }: { debt_id: string; amount: number }) => {
-      const supabase = createClient();
-      
-      const { data, error } = await supabase
-        .from("debt_payments")
-        .insert([{
-          debt_id,
-          amount,
-          date: new Date().toISOString(),
-        }])
-        .select();
+  if (!debts) return [];
+  
+  const cardsMap = new Map<string, {
+    bank: string;
+    brand: string;
+    alias: string;
+    lastDigits: string;
+    closingDate?: number | null;
+  }>();
 
-      if (error) throw new Error(error.message);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["debts"] });
-    },
-  });
+  for (const debt of debts) {
+    if (debt.modality === "credit_card" && debt.card_bank && debt.card_brand) {
+      const key = `${debt.card_bank}-${debt.card_brand}-${debt.card_last_digits || ''}`;
+      if (!cardsMap.has(key)) {
+        cardsMap.set(key, {
+          bank: debt.card_bank,
+          brand: debt.card_brand,
+          alias: debt.card_alias || `${debt.card_brand} ${debt.card_bank}`,
+          lastDigits: debt.card_last_digits || "",
+          closingDate: debt.statement_closing_date,
+        });
+      }
+    }
+  }
+
+  return Array.from(cardsMap.values());
 }
 
 export function useCreateDebt() {
@@ -89,6 +80,15 @@ export function useCreateDebt() {
           due_date: newDebt.due_date || null,
           interest_rate: newDebt.interest_rate || null,
           status: "pending",
+          modality: newDebt.modality || "simple",
+          card_alias: newDebt.card_alias || null,
+          card_bank: newDebt.card_bank || null,
+          card_brand: newDebt.card_brand || null,
+          card_last_digits: newDebt.card_last_digits || null,
+          statement_closing_date: newDebt.statement_closing_date || null,
+          installments_total: newDebt.installments_total || 1,
+          installments_paid: newDebt.installments_paid || 0,
+          allows_capital_amortization: newDebt.allows_capital_amortization || false,
         }])
         .select();
 
@@ -97,6 +97,98 @@ export function useCreateDebt() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["balance"] });
+    },
+  });
+}
+
+/**
+ * Registra un abono/pago a una deuda
+ */
+export function useCreateDebtPayment() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({
+      debt_id,
+      amount,
+      installment_number,
+      description,
+    }: {
+      debt_id: string;
+      amount: number;
+      installment_number?: number | null;
+      description?: string | null;
+    }) => {
+      const supabase = createClient();
+      
+      const { data, error } = await supabase
+        .from("debt_payments")
+        .insert([{
+          debt_id,
+          amount,
+          date: new Date().toISOString(),
+          movement_type: "payment",
+          installment_number: installment_number || null,
+          description: description || null,
+        }])
+        .select();
+
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["balance"] });
+    },
+  });
+}
+
+/**
+ * Suma un consumo a una tarjeta de crédito o amplía el capital de una deuda
+ */
+export function useAddDebtCharge() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      debt_id,
+      amount,
+      description,
+      currentDebtAmount,
+    }: DebtChargeValues & { currentDebtAmount: number }) => {
+      const supabase = createClient();
+
+      // 1. Registrar el movimiento de cargo
+      const { error: paymentError } = await supabase
+        .from("debt_payments")
+        .insert([{
+          debt_id,
+          amount,
+          date: new Date().toISOString(),
+          movement_type: "charge",
+          description,
+        }]);
+
+      if (paymentError) throw new Error(paymentError.message);
+
+      // 2. Aumentar el capital acumulado de la deuda
+      const newTotal = currentDebtAmount + amount;
+      const { data, error: updateError } = await supabase
+        .from("debts")
+        .update({
+          amount: newTotal,
+          status: "pending",
+        })
+        .eq("id", debt_id)
+        .select();
+
+      if (updateError) throw new Error(updateError.message);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["balance"] });
     },
   });
 }
@@ -116,6 +208,7 @@ export function useDeleteDebt() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["balance"] });
     },
   });
 }
