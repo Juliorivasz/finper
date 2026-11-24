@@ -23,6 +23,12 @@ export function ExpenseDetailDialog({ expense, onClose }: ExpenseDetailDialogPro
               </span>
             </div>
             <div className="flex justify-between items-center pb-4 border-b border-border">
+              <span className="text-muted-foreground font-medium">Tipo de Gasto</span>
+              <span className="font-medium text-sm text-foreground">
+                {expense.is_recurring ? "Recurrente mensual (Fijo)" : "Gasto puntual (Variable)"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center pb-4 border-b border-border">
               <span className="text-muted-foreground font-medium">Fecha</span>
               <span className="font-semibold text-foreground">
                 {parseLocalDate(expense.date).toLocaleDateString()}

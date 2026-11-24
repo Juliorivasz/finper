@@ -12,6 +12,7 @@ export type CalendarProps = React.ComponentProps<typeof DayPicker>
 function Calendar({
   className,
   showOutsideDays = true,
+  style,
   ...props
 }: CalendarProps) {
   return (
@@ -19,8 +20,17 @@ function Calendar({
       locale={es}
       showOutsideDays={showOutsideDays}
       className={cn("p-3 bg-background text-foreground", className)}
-      // Podríamos sobreescribir estilos si quisiéramos aquí, 
-      // pero el style.css por defecto de react-day-picker es muy limpio.
+      style={
+        {
+          "--rdp-accent-color": "var(--primary)",
+          "--rdp-accent-background-color": "var(--muted)",
+          "--rdp-range_start-color": "var(--primary-foreground)",
+          "--rdp-range_end-color": "var(--primary-foreground)",
+          "--rdp-range_middle-color": "var(--foreground)",
+          "--rdp-today-color": "var(--primary)",
+          ...style,
+        } as React.CSSProperties
+      }
       {...props}
     />
   )

@@ -69,3 +69,14 @@ body {
   outline: none !important;
 }
 
+/* Adaptación del calendario react-day-picker a la paleta semántica de Finper */
+.rdp-root {
+  --rdp-accent-color: var(--primary) !important;
+  --rdp-accent-background-color: var(--muted) !important;
+  --rdp-range_start-color: var(--primary-foreground) !important;
+  --rdp-range_end-color: var(--primary-foreground) !important;
+  --rdp-range_middle-color: var(--foreground) !important;
+  --rdp-today-color: var(--primary) !important;
+}
+
+

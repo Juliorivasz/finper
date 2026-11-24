@@ -5,6 +5,12 @@ import { useGetIncomes } from "../hooks/useIncomes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, X } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { DonutChart } from "@/components/ui/DonutChart";
@@ -13,6 +19,13 @@ export function AdvancedIncomeCharts() {
   const { data: incomes, isLoading } = useGetIncomes();
   
   const [timeFilter, setTimeFilter] = useState("current_month");
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>(() => {
+    const now = new Date();
+    return {
+      from: new Date(now.getFullYear(), now.getMonth(), 1),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+    };
+  });
   const [categoryFilter, setCategoryFilter] = useState("all");
 
   const categories = useMemo(() => {
@@ -21,68 +34,106 @@ export function AdvancedIncomeCharts() {
     return Array.from(cats).sort();
   }, [incomes]);
 
+  const handleTimeFilterChange = (val: string) => {
+    setTimeFilter(val);
+    const now = new Date();
+    if (val === "current_month") {
+      setDateRange({
+        from: new Date(now.getFullYear(), now.getMonth(), 1),
+        to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+      });
+    } else if (val === "last_month") {
+      setDateRange({
+        from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59),
+      });
+    } else if (val === "last_30_days") {
+      const from = new Date();
+      from.setDate(now.getDate() - 30);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date();
+      to.setHours(23, 59, 59, 999);
+      setDateRange({ from, to });
+    } else if (val === "this_year") {
+      setDateRange({
+        from: new Date(now.getFullYear(), 0, 1),
+        to: new Date(now.getFullYear(), 11, 31, 23, 59, 59),
+      });
+    } else if (val === "all_time") {
+      setDateRange({ from: undefined, to: undefined });
+    }
+  };
+
+  const handleCustomRangeSelect = (range: any) => {
+    setDateRange({ from: range?.from, to: range?.to });
+    setTimeFilter("custom");
+  };
+
   const filteredincomes = useMemo(() => {
     if (!incomes) return [];
     
-    let filtered = incomes;
-    
-    // Filtro por categoría (entidad)
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter(e => (e.category || "General") === categoryFilter);
-    }
-    
-    // Filtro por tiempo
-    const now = new Date();
-    if (timeFilter === "current_month") {
-      filtered = filtered.filter(e => {
-        const d = parseLocalDate(e.date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      });
-    } else if (timeFilter === "last_month") {
-      filtered = filtered.filter(e => {
-        const d = parseLocalDate(e.date);
-        let lastMonth = now.getMonth() - 1;
-        let year = now.getFullYear();
-        if (lastMonth < 0) {
-          lastMonth = 11;
-          year -= 1;
-        }
-        return d.getMonth() === lastMonth && d.getFullYear() === year;
-      });
-    } else if (timeFilter === "this_year") {
-      filtered = filtered.filter(e => parseLocalDate(e.date).getFullYear() === now.getFullYear());
-    }
-
-    return filtered;
-  }, [incomes, timeFilter, categoryFilter]);
-
-  // Datos para el gráfico de tiempo (Línea)
-  const timeData = useMemo(() => {
-    const grouped: Record<string, number> = {};
-    
-    filteredincomes.forEach(exp => {
-      let key = "";
-      const d = parseLocalDate(exp.date);
-      if (timeFilter === "current_month" || timeFilter === "last_month") {
-        key = d.toLocaleDateString("es-AR", { day: '2-digit', month: '2-digit' });
-      } else {
-        key = d.toLocaleDateString("es-AR", { month: 'short', year: 'numeric' });
+    return incomes.filter(inc => {
+      // Filtro por categoría
+      if (categoryFilter !== "all") {
+        const cat = inc.category || "General";
+        if (cat !== categoryFilter) return false;
       }
-      grouped[key] = (grouped[key] || 0) + exp.amount;
+      
+      // Filtro por rango de fechas
+      if (dateRange.from || dateRange.to) {
+        const d = parseLocalDate(inc.date);
+        d.setHours(0, 0, 0, 0);
+        if (dateRange.from) {
+          const fromDate = new Date(dateRange.from);
+          fromDate.setHours(0, 0, 0, 0);
+          if (d < fromDate) return false;
+        }
+        if (dateRange.to) {
+          const toDate = new Date(dateRange.to);
+          toDate.setHours(23, 59, 59, 999);
+          if (d > toDate) return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [incomes, dateRange, categoryFilter]);
+
+  // Datos para el gráfico de tiempo (Línea) ordenados cronológicamente
+  const timeData = useMemo(() => {
+    if (filteredincomes.length === 0) return [];
+
+    const timestamps = filteredincomes.map(e => parseLocalDate(e.date).getTime());
+    const minTime = Math.min(...timestamps);
+    const maxTime = Math.max(...timestamps);
+    const diffDays = (maxTime - minTime) / (1000 * 60 * 60 * 24);
+    const isDaily = diffDays <= 45;
+
+    const sorted = [...filteredincomes].sort(
+      (a, b) => parseLocalDate(a.date).getTime() - parseLocalDate(b.date).getTime()
+    );
+
+    const grouped: Record<string, number> = {};
+    sorted.forEach(inc => {
+      const d = parseLocalDate(inc.date);
+      const key = isDaily
+        ? d.toLocaleDateString("es-AR", { day: '2-digit', month: '2-digit' })
+        : d.toLocaleDateString("es-AR", { month: 'short', year: 'numeric' });
+      grouped[key] = (grouped[key] || 0) + inc.amount;
     });
 
     return Object.entries(grouped)
       .map(([date, amount]) => ({ date, amount }));
-  }, [filteredincomes, timeFilter]);
+  }, [filteredincomes]);
 
   // Datos para el gráfico de torta (Distribución de categorías)
   const categoryData = useMemo(() => {
     if (categoryFilter !== "all") return [];
     
     const grouped: Record<string, number> = {};
-    filteredincomes.forEach(exp => {
-      const cat = exp.category || "General";
-      grouped[cat] = (grouped[cat] || 0) + exp.amount;
+    filteredincomes.forEach(inc => {
+      const cat = inc.category || "General";
+      grouped[cat] = (grouped[cat] || 0) + inc.amount;
     });
 
     return Object.entries(grouped)
@@ -96,37 +147,105 @@ export function AdvancedIncomeCharts() {
     <div className="space-y-6">
       {/* Filtros */}
       <Card className="p-4 bg-card border-border">
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="w-full sm:w-64 space-y-1">
-            <Label className="text-xs text-muted-foreground">Periodo</Label>
-            <Select 
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)}
-              options={[
-                { value: "current_month", label: "Este Mes" },
-                { value: "last_month", label: "Mes Pasado" },
-                { value: "this_year", label: "Este Año" },
-                { value: "all_time", label: "Todo el Histórico" },
-              ]}
-            />
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full lg:w-auto flex-wrap">
+            {/* Selector de Periodo */}
+            <div className="w-full sm:w-44 space-y-1">
+              <Label className="text-xs text-muted-foreground">Periodo</Label>
+              <Select 
+                value={timeFilter}
+                onChange={(e) => handleTimeFilterChange(e.target.value)}
+                options={[
+                  { value: "current_month", label: "Este Mes" },
+                  { value: "last_month", label: "Mes Pasado" },
+                  { value: "last_30_days", label: "Últimos 30 días" },
+                  { value: "this_year", label: "Este Año" },
+                  { value: "all_time", label: "Todo el Histórico" },
+                  { value: "custom", label: "Personalizado" },
+                ]}
+              />
+            </div>
+
+            {/* Selector de Rango de Fechas */}
+            <div className="w-full sm:w-[240px] space-y-1">
+              <Label className="text-xs text-muted-foreground">Rango de fechas</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal bg-background cursor-pointer h-10 px-3"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate text-xs sm:text-sm">
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "dd/MM/yy", { locale: es })} -{" "}
+                            {format(dateRange.to, "dd/MM/yy", { locale: es })}
+                          </>
+                        ) : (
+                          format(dateRange.from, "dd/MM/yyyy", { locale: es })
+                        )
+                      ) : (
+                        <span className="text-muted-foreground">Sin restricción</span>
+                      )}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 max-w-[calc(100vw-20px)] z-50" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: dateRange.from,
+                      to: dateRange.to,
+                    }}
+                    onSelect={handleCustomRangeSelect}
+                    numberOfMonths={1}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            {/* Categoría */}
+            <div className="w-full sm:w-48 space-y-1">
+              <Label className="text-xs text-muted-foreground">Categoría</Label>
+              <Select 
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                options={[
+                  { value: "all", label: "Todas las Categorías" },
+                  ...categories.map(c => ({ value: c, label: c })),
+                ]}
+              />
+            </div>
+
+            {/* Restablecer si hay filtro no predeterminado */}
+            {(categoryFilter !== "all" || timeFilter !== "current_month") && (
+              <div className="self-end pb-0.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCategoryFilter("all");
+                    handleTimeFilterChange("current_month");
+                  }}
+                  className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5 mr-1" />
+                  Restablecer
+                </Button>
+              </div>
+            )}
           </div>
           
-          <div className="w-full sm:w-64 space-y-1">
-            <Label className="text-xs text-muted-foreground">Categoría (Entidad)</Label>
-            <Select 
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              options={[
-                { value: "all", label: "Todas las Categorías" },
-                ...categories.map(c => ({ value: c, label: c })),
-              ]}
-            />
-          </div>
-          
-          <div className="ml-auto flex flex-col items-end">
+          {/* Métrica Total */}
+          <div className="flex flex-col sm:items-end w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-border">
             <span className="text-xs font-medium text-muted-foreground block">Total del Periodo</span>
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-2xl font-bold text-emerald-500">
               ${formatCurrency(filteredincomes.reduce((acc, curr) => acc + curr.amount, 0))}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {filteredincomes.length} registro(s)
             </span>
           </div>
         </div>
@@ -185,3 +304,4 @@ export function AdvancedIncomeCharts() {
     </div>
   );
 }
+

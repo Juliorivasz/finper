@@ -1,5 +1,6 @@
-import { Trash2 } from "lucide-react"
+import { Trash2, Repeat } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Table,
   TableHeader,
@@ -44,7 +45,15 @@ export function ExpenseTable({
                 {parseLocalDate(expense.date).toLocaleDateString()}
               </TableCell>
               <TableCell className="px-6 py-4 font-medium text-sm">
-                {expense.categories?.name || "Categoría general"}
+                <div className="flex items-center gap-2">
+                  <span>{expense.categories?.name || "Categoría general"}</span>
+                  {expense.is_recurring && (
+                    <Badge variant="muted" size="sm" className="gap-1 font-normal text-[10px] text-muted-foreground">
+                      <Repeat className="w-2.5 h-2.5 text-primary" />
+                      Fijo
+                    </Badge>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="px-6 py-4 text-muted-foreground max-w-[200px] truncate">
                 {expense.description || "-"}
