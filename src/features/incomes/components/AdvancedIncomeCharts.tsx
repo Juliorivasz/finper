@@ -11,9 +11,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, ReferenceLine } from "recharts";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { DonutChart } from "@/components/ui/DonutChart";
+import { calculateIncomeAverages } from "../utils/incomeCalculations";
 
 export function AdvancedIncomeCharts() {
   const { data: incomes, isLoading } = useGetIncomes();
@@ -98,6 +99,12 @@ export function AdvancedIncomeCharts() {
       return true;
     });
   }, [incomes, dateRange, categoryFilter]);
+
+  // Cálculo de promedios (mensual y por transacción)
+  const metrics = useMemo(
+    () => calculateIncomeAverages(filteredincomes, dateRange),
+    [filteredincomes, dateRange]
+  );
 
   // Datos para el gráfico de tiempo (Línea) ordenados cronológicamente
   const timeData = useMemo(() => {
@@ -238,15 +245,37 @@ export function AdvancedIncomeCharts() {
             )}
           </div>
           
-          {/* Métrica Total */}
-          <div className="flex flex-col sm:items-end w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-border">
-            <span className="text-xs font-medium text-muted-foreground block">Total del Periodo</span>
-            <span className="text-2xl font-bold text-emerald-500">
-              ${formatCurrency(filteredincomes.reduce((acc, curr) => acc + curr.amount, 0))}
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              {filteredincomes.length} registro(s)
-            </span>
+          {/* Métricas del Periodo con Promedios */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto pt-3 lg:pt-0 border-t lg:border-t-0 border-border">
+            <div className="flex flex-col sm:items-end bg-muted/20 sm:bg-transparent p-2.5 sm:p-0 rounded-lg">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Total Periodo</span>
+              <span className="text-xl sm:text-2xl font-bold text-emerald-500">
+                ${formatCurrency(metrics.total)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {metrics.count} cobro(s)
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:items-end bg-muted/20 sm:bg-transparent p-2.5 sm:p-0 rounded-lg sm:border-l sm:border-border sm:pl-3">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Promedio Mensual</span>
+              <span className="text-xl sm:text-2xl font-bold text-foreground">
+                ${formatCurrency(metrics.monthlyAverage)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                Salario prom. (~{metrics.monthsCount}m)
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:items-end bg-muted/20 sm:bg-transparent p-2.5 sm:p-0 rounded-lg sm:border-l sm:border-border sm:pl-3">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Por Cobro</span>
+              <span className="text-xl sm:text-2xl font-bold text-foreground">
+                ${formatCurrency(metrics.averagePerTransaction)}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                Ticket promedio
+              </span>
+            </div>
           </div>
         </div>
       </Card>
@@ -262,7 +291,7 @@ export function AdvancedIncomeCharts() {
           <CardContent className="flex-1 p-4 pt-0">
             {timeData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={timeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <LineChart data={timeData} margin={{ top: 15, right: 15, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                   <XAxis dataKey="date" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val >= 1000 ? (val/1000).toFixed(1)+'k' : val}`} />
@@ -270,6 +299,14 @@ export function AdvancedIncomeCharts() {
                     formatter={(value: any) => [`$${formatCurrency(value)}`, "Total"]}
                     contentStyle={{ backgroundColor: "#171717", border: "1px solid #333", borderRadius: "8px" }} itemStyle={{ color: "#fff" }} labelStyle={{ color: "#a1a1aa" }}
                   />
+                  {metrics.averagePerTransaction > 0 && (
+                    <ReferenceLine
+                      y={metrics.averagePerTransaction}
+                      stroke="#10b981"
+                      strokeDasharray="4 4"
+                      strokeOpacity={0.6}
+                    />
+                  )}
                   <Line type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: "#10b981" }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>

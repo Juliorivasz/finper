@@ -9,6 +9,7 @@ import { parseLocalDate } from "@/lib/utils";
 import { useBalance } from "@/hooks/useBalance";
 import { useGetIncomes, useDeleteIncome } from "../hooks/useIncomes";
 import { Income } from "../types";
+import { calculateIncomeAverages } from "../utils/incomeCalculations";
 import { IncomeSummaryCard } from "./IncomeSummaryCard";
 import { IncomeFilterBar } from "./IncomeFilterBar";
 import { IncomeTable } from "./IncomeTable";
@@ -72,6 +73,12 @@ export function IncomeList() {
     });
   }, [incomes, searchTerm, dateRange]);
 
+  const isFiltered = Boolean(dateRange.from || dateRange.to);
+  const rangeMetrics = useMemo(
+    () => calculateIncomeAverages(filteredIncomes, dateRange),
+    [filteredIncomes, dateRange]
+  );
+
   const totalPages = Math.max(1, Math.ceil(filteredIncomes.length / ITEMS_PER_PAGE));
   const paginatedIncomes = useMemo(() => {
     return filteredIncomes.slice(
@@ -109,6 +116,8 @@ export function IncomeList() {
         ingresosMes={ingresosMes}
         balanceTotal={balanceTotal}
         isBalanceLoading={isBalanceLoading}
+        isFiltered={isFiltered}
+        rangeMetrics={rangeMetrics}
       />
 
       {/* Diálogos */}
