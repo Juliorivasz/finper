@@ -74,7 +74,7 @@ export function IncomeForm({ onSuccessCallback }: IncomeFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       {/* Monto */}
       <FormField label="Monto" error={errors.amount?.message} required>
         <Controller
@@ -90,7 +90,7 @@ export function IncomeForm({ onSuccessCallback }: IncomeFormProps) {
         />
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         {/* Fecha */}
         <FormField label="Fecha" error={errors.date?.message} required>
           <Input type="date" {...register("date")} />
@@ -114,7 +114,7 @@ export function IncomeForm({ onSuccessCallback }: IncomeFormProps) {
         />
       </FormField>
 
-      <Button type="submit" className="w-full mt-2" disabled={isPending}>
+      <Button type="submit" className="w-full mt-1 cursor-pointer" disabled={isPending}>
         {isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

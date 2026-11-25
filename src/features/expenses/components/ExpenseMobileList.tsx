@@ -1,5 +1,6 @@
-import { Trash2 } from "lucide-react"
+import { Trash2, Repeat } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { formatCurrency, parseLocalDate } from "@/lib/utils"
 
 interface ExpenseMobileListProps {
@@ -23,9 +24,17 @@ export function ExpenseMobileList({
         >
           <div className="flex justify-between items-start gap-4">
             <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-foreground truncate">
-                {expense.categories?.name || "Categoría general"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-foreground truncate">
+                  {expense.categories?.name || "Categoría general"}
+                </span>
+                {expense.is_recurring && (
+                  <Badge variant="muted" size="sm" className="gap-1 font-normal text-[10px] shrink-0">
+                    <Repeat className="w-2.5 h-2.5 text-primary" />
+                    Fijo
+                  </Badge>
+                )}
+              </div>
               {expense.description && (
                 <span className="text-sm text-muted-foreground truncate mt-0.5">
                   {expense.description}
