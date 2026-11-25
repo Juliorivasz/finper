@@ -6,6 +6,8 @@ import * as z from "zod";
 import { useCreateIncome } from "../hooks/useIncomes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { FormField } from "@/components/ui/form-field";
 import { AnimatedAmountInput } from "@/components/ui/animated-amount-input";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -19,13 +21,13 @@ const formSchema = z.object({
 
 type IncomeFormValues = z.infer<typeof formSchema>;
 
-const DEFAULT_CATEGORIES = [
-  "Sueldo",
-  "Honorarios",
-  "Ventas",
-  "Rendimientos",
-  "Transferencias",
-  "Otros",
+const CATEGORY_OPTIONS = [
+  { value: "Sueldo", label: "Sueldo" },
+  { value: "Honorarios", label: "Honorarios" },
+  { value: "Ventas", label: "Ventas" },
+  { value: "Rendimientos", label: "Rendimientos" },
+  { value: "Transferencias", label: "Transferencias" },
+  { value: "Otros", label: "Otros" },
 ];
 
 interface IncomeFormProps {
@@ -72,10 +74,9 @@ export function IncomeForm({ onSuccessCallback }: IncomeFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       {/* Monto */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Monto</label>
+      <FormField label="Monto" error={errors.amount?.message} required>
         <Controller
           name="amount"
           control={control}
@@ -87,54 +88,33 @@ export function IncomeForm({ onSuccessCallback }: IncomeFormProps) {
             />
           )}
         />
-        {errors.amount && (
-          <p className="text-sm text-red-500">{errors.amount.message}</p>
-        )}
-      </div>
+      </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         {/* Fecha */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Fecha</label>
+        <FormField label="Fecha" error={errors.date?.message} required>
           <Input type="date" {...register("date")} />
-          {errors.date && (
-            <p className="text-sm text-red-500">{errors.date.message}</p>
-          )}
-        </div>
+        </FormField>
 
         {/* Categoría */}
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Categoría</label>
-          <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50"
+        <FormField label="Categoría" error={errors.category?.message} required>
+          <Select
+            options={CATEGORY_OPTIONS}
+            placeholder="Selecciona..."
             {...register("category")}
-          >
-            <option value="">Selecciona...</option>
-            {DEFAULT_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-          {errors.category && (
-            <p className="text-sm text-red-500">{errors.category.message}</p>
-          )}
-        </div>
+          />
+        </FormField>
       </div>
 
       {/* Descripción */}
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Descripción</label>
+      <FormField label="Descripción" error={errors.description?.message} required>
         <Input 
           placeholder="Ej: Sueldo mensual..." 
           {...register("description")} 
         />
-        {errors.description && (
-          <p className="text-sm text-red-500">{errors.description.message}</p>
-        )}
-      </div>
+      </FormField>
 
-      <Button type="submit" className="w-full mt-2" disabled={isPending}>
+      <Button type="submit" className="w-full mt-1 cursor-pointer" disabled={isPending}>
         {isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

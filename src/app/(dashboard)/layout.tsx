@@ -1,6 +1,6 @@
-import { MobileNav } from "./components/MobileNav";
-import { DesktopSidebar } from "./components/DesktopSidebar";
-import { GlobalAddButton } from "./components/GlobalAddButton";
+import { MobileNav } from "@/components/layout/MobileNav";
+import { DesktopSidebar } from "@/components/layout/DesktopSidebar";
+import { GlobalAddButton } from "@/components/layout/GlobalAddButton";
 
 // Todas las páginas del dashboard requieren autenticación dinámica (cookies de Supabase)
 export const dynamic = "force-dynamic";

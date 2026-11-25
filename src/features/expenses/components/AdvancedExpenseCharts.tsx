@@ -3,17 +3,29 @@
 import { useState, useMemo } from "react";
 import { useGetExpenses } from "../hooks/useExpenses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid, PieChart, Pie, Legend } from "recharts";
+import { Select } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon, X } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
 import { formatCurrency, parseLocalDate } from "@/lib/utils";
 import { DonutChart } from "@/components/ui/DonutChart";
-
-// Colores consistentes
-const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
 
 export function AdvancedExpenseCharts() {
   const { data: expenses, isLoading } = useGetExpenses();
   
   const [timeFilter, setTimeFilter] = useState("current_month");
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>(() => {
+    const now = new Date();
+    return {
+      from: new Date(now.getFullYear(), now.getMonth(), 1),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+    };
+  });
   const [categoryFilter, setCategoryFilter] = useState("all");
 
   const categories = useMemo(() => {
@@ -22,66 +34,101 @@ export function AdvancedExpenseCharts() {
     return Array.from(cats).sort();
   }, [expenses]);
 
+  const handleTimeFilterChange = (val: string) => {
+    setTimeFilter(val);
+    const now = new Date();
+    if (val === "current_month") {
+      setDateRange({
+        from: new Date(now.getFullYear(), now.getMonth(), 1),
+        to: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+      });
+    } else if (val === "last_month") {
+      setDateRange({
+        from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        to: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59),
+      });
+    } else if (val === "last_30_days") {
+      const from = new Date();
+      from.setDate(now.getDate() - 30);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date();
+      to.setHours(23, 59, 59, 999);
+      setDateRange({ from, to });
+    } else if (val === "this_year") {
+      setDateRange({
+        from: new Date(now.getFullYear(), 0, 1),
+        to: new Date(now.getFullYear(), 11, 31, 23, 59, 59),
+      });
+    } else if (val === "all_time") {
+      setDateRange({ from: undefined, to: undefined });
+    }
+  };
+
+  const handleCustomRangeSelect = (range: any) => {
+    setDateRange({ from: range?.from, to: range?.to });
+    setTimeFilter("custom");
+  };
+
   const filteredExpenses = useMemo(() => {
     if (!expenses) return [];
     
-    let filtered = expenses;
-    
-    // Filtro por categoría (entidad)
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter(e => ((e as any).categories?.name || "General") === categoryFilter);
-    }
-    
-    // Filtro por tiempo
-    const now = new Date();
-    if (timeFilter === "current_month") {
-      filtered = filtered.filter(e => {
-        const d = parseLocalDate(e.date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      });
-    } else if (timeFilter === "last_month") {
-      filtered = filtered.filter(e => {
-        const d = parseLocalDate(e.date);
-        let lastMonth = now.getMonth() - 1;
-        let year = now.getFullYear();
-        if (lastMonth < 0) {
-          lastMonth = 11;
-          year -= 1;
-        }
-        return d.getMonth() === lastMonth && d.getFullYear() === year;
-      });
-    } else if (timeFilter === "this_year") {
-      filtered = filtered.filter(e => parseLocalDate(e.date).getFullYear() === now.getFullYear());
-    }
-
-    return filtered;
-  }, [expenses, timeFilter, categoryFilter]);
-
-  // Datos para el gráfico de tiempo (Línea)
-  const timeData = useMemo(() => {
-    const grouped: Record<string, number> = {};
-    
-    filteredExpenses.forEach(exp => {
-      let key = "";
-      const d = parseLocalDate(exp.date);
-      if (timeFilter === "current_month" || timeFilter === "last_month") {
-        // Agrupar por día
-        key = d.toLocaleDateString("es-AR", { day: '2-digit', month: '2-digit' });
-      } else {
-        // Agrupar por mes
-        key = d.toLocaleDateString("es-AR", { month: 'short', year: 'numeric' });
+    return expenses.filter(exp => {
+      // Filtro por categoría
+      if (categoryFilter !== "all") {
+        const cat = (exp as any).categories?.name || "General";
+        if (cat !== categoryFilter) return false;
       }
+      
+      // Filtro por rango de fechas
+      if (dateRange.from || dateRange.to) {
+        const d = parseLocalDate(exp.date);
+        d.setHours(0, 0, 0, 0);
+        if (dateRange.from) {
+          const fromDate = new Date(dateRange.from);
+          fromDate.setHours(0, 0, 0, 0);
+          if (d < fromDate) return false;
+        }
+        if (dateRange.to) {
+          const toDate = new Date(dateRange.to);
+          toDate.setHours(23, 59, 59, 999);
+          if (d > toDate) return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [expenses, dateRange, categoryFilter]);
+
+  // Datos para el gráfico de tiempo (Línea) ordenados cronológicamente
+  const timeData = useMemo(() => {
+    if (filteredExpenses.length === 0) return [];
+
+    const timestamps = filteredExpenses.map(e => parseLocalDate(e.date).getTime());
+    const minTime = Math.min(...timestamps);
+    const maxTime = Math.max(...timestamps);
+    const diffDays = (maxTime - minTime) / (1000 * 60 * 60 * 24);
+    const isDaily = diffDays <= 45;
+
+    const sorted = [...filteredExpenses].sort(
+      (a, b) => parseLocalDate(a.date).getTime() - parseLocalDate(b.date).getTime()
+    );
+
+    const grouped: Record<string, number> = {};
+    sorted.forEach(exp => {
+      const d = parseLocalDate(exp.date);
+      const key = isDaily
+        ? d.toLocaleDateString("es-AR", { day: '2-digit', month: '2-digit' })
+        : d.toLocaleDateString("es-AR", { month: 'short', year: 'numeric' });
       grouped[key] = (grouped[key] || 0) + exp.amount;
     });
 
-    // Ordenar cronológicamente (aprox para simplificar, en un caso real se ordenan las fechas)
     return Object.entries(grouped)
       .map(([date, amount]) => ({ date, amount }));
-  }, [filteredExpenses, timeFilter]);
+  }, [filteredExpenses]);
 
   // Datos para el gráfico de torta (Distribución de categorías)
   const categoryData = useMemo(() => {
-    if (categoryFilter !== "all") return []; // No tiene sentido si ya filtramos 1 sola categoría
+    if (categoryFilter !== "all") return [];
     
     const grouped: Record<string, number> = {};
     filteredExpenses.forEach(exp => {
@@ -100,39 +147,105 @@ export function AdvancedExpenseCharts() {
     <div className="space-y-6">
       {/* Filtros */}
       <Card className="p-4 bg-card border-border">
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="w-full sm:w-64">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Periodo</label>
-            <select 
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)}
-            >
-              <option value="current_month">Este Mes</option>
-              <option value="last_month">Mes Pasado</option>
-              <option value="this_year">Este Año</option>
-              <option value="all_time">Todo el Histórico</option>
-            </select>
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full lg:w-auto flex-wrap">
+            {/* Selector de Periodo */}
+            <div className="w-full sm:w-44 space-y-1">
+              <Label className="text-xs text-muted-foreground">Periodo</Label>
+              <Select 
+                value={timeFilter}
+                onChange={(e) => handleTimeFilterChange(e.target.value)}
+                options={[
+                  { value: "current_month", label: "Este Mes" },
+                  { value: "last_month", label: "Mes Pasado" },
+                  { value: "last_30_days", label: "Últimos 30 días" },
+                  { value: "this_year", label: "Este Año" },
+                  { value: "all_time", label: "Todo el Histórico" },
+                  { value: "custom", label: "Personalizado" },
+                ]}
+              />
+            </div>
+
+            {/* Selector de Rango de Fechas */}
+            <div className="w-full sm:w-[240px] space-y-1">
+              <Label className="text-xs text-muted-foreground">Rango de fechas</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal bg-background cursor-pointer h-10 px-3"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate text-xs sm:text-sm">
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "dd/MM/yy", { locale: es })} -{" "}
+                            {format(dateRange.to, "dd/MM/yy", { locale: es })}
+                          </>
+                        ) : (
+                          format(dateRange.from, "dd/MM/yyyy", { locale: es })
+                        )
+                      ) : (
+                        <span className="text-muted-foreground">Sin restricción</span>
+                      )}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 max-w-[calc(100vw-20px)] z-50" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: dateRange.from,
+                      to: dateRange.to,
+                    }}
+                    onSelect={handleCustomRangeSelect}
+                    numberOfMonths={1}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            {/* Categoría */}
+            <div className="w-full sm:w-48 space-y-1">
+              <Label className="text-xs text-muted-foreground">Categoría</Label>
+              <Select 
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                options={[
+                  { value: "all", label: "Todas las Categorías" },
+                  ...categories.map(c => ({ value: c as string, label: c as string })),
+                ]}
+              />
+            </div>
+
+            {/* Restablecer si hay filtro no predeterminado */}
+            {(categoryFilter !== "all" || timeFilter !== "current_month") && (
+              <div className="self-end pb-0.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCategoryFilter("all");
+                    handleTimeFilterChange("current_month");
+                  }}
+                  className="h-9 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5 mr-1" />
+                  Restablecer
+                </Button>
+              </div>
+            )}
           </div>
           
-          <div className="w-full sm:w-64">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoría (Entidad)</label>
-            <select 
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="all">Todas las Categorías</option>
-              {categories.map(c => (
-                <option key={c as string} value={c as string}>{c as string}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="ml-auto flex flex-col items-end">
+          {/* Métrica Total */}
+          <div className="flex flex-col sm:items-end w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-border">
             <span className="text-xs font-medium text-muted-foreground block">Total del Periodo</span>
-            <span className="text-2xl font-bold text-foreground">
+            <span className="text-2xl font-bold text-red-500">
               ${formatCurrency(filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0))}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {filteredExpenses.length} registro(s)
             </span>
           </div>
         </div>
@@ -191,3 +304,4 @@ export function AdvancedExpenseCharts() {
     </div>
   );
 }
+

@@ -6,9 +6,17 @@ interface AnimatedAmountInputProps {
   value: number;
   onChange: (val: number) => void;
   autoFocus?: boolean;
+  compact?: boolean;
+  className?: string;
 }
 
-export function AnimatedAmountInput({ value, onChange, autoFocus }: AnimatedAmountInputProps) {
+export function AnimatedAmountInput({ 
+  value, 
+  onChange, 
+  autoFocus,
+  compact = true,
+  className = "" 
+}: AnimatedAmountInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
@@ -70,12 +78,32 @@ export function AnimatedAmountInput({ value, onChange, autoFocus }: AnimatedAmou
   const displayValue = getDisplayValue(inputValue);
   const len = displayValue.length;
   
-  // Shrink font size aggressively to ensure it NEVER breaks out of a standard ~350px mobile screen
-  const sizeClass = len > 14 ? 'text-xl' : len > 10 ? 'text-3xl' : len > 7 ? 'text-4xl' : 'text-5xl sm:text-6xl';
+  // Dynamic font scaling ensuring it never breaks layouts or forces modal scroll
+  const sizeClass = compact
+    ? len > 14
+      ? "text-lg"
+      : len > 10
+      ? "text-xl sm:text-2xl"
+      : len > 7
+      ? "text-2xl sm:text-3xl"
+      : "text-3xl sm:text-4xl"
+    : len > 14
+    ? "text-xl"
+    : len > 10
+    ? "text-3xl"
+    : len > 7
+    ? "text-4xl"
+    : "text-5xl sm:text-6xl";
+
+  const paddingClass = compact ? "py-2 px-3 rounded-xl" : "py-4 px-4 rounded-2xl";
 
   return (
     <div 
-      className={`relative flex flex-col items-center justify-center py-4 px-4 rounded-2xl transition-all cursor-text overflow-hidden w-full max-w-full ${isFocused ? 'bg-primary/5 ring-2 ring-primary scale-[1.01]' : 'bg-muted/30 hover:bg-muted/50 border border-border'}`}
+      className={`relative flex flex-col items-center justify-center ${paddingClass} transition-all cursor-text overflow-hidden w-full max-w-full ${
+        isFocused 
+          ? "bg-primary/5 ring-1 ring-primary border border-primary" 
+          : "bg-muted/30 hover:bg-muted/50 border border-border"
+      } ${className}`}
       onClick={() => inputRef.current?.focus()}
     >
       <input 
@@ -98,13 +126,15 @@ export function AnimatedAmountInput({ value, onChange, autoFocus }: AnimatedAmou
       />
       
       <div className="flex items-center justify-center pointer-events-none w-full px-2 min-w-0 overflow-hidden">
-        <span className={`font-medium mr-2 mt-1 shrink-0 transition-colors ${len > 10 ? 'text-xl' : 'text-2xl'} ${!inputValue ? 'text-muted-foreground/30' : 'text-primary'}`}>$</span>
+        <span className={`font-medium mr-1.5 shrink-0 transition-colors ${compact ? 'text-lg sm:text-xl' : (len > 10 ? 'text-xl' : 'text-2xl')} ${!inputValue ? 'text-muted-foreground/30' : 'text-primary'}`}>$</span>
         <div className={`${sizeClass} font-bold tracking-tighter transition-colors truncate min-w-0 break-all max-w-full ${!inputValue ? 'text-muted-foreground/30' : 'text-foreground'}`}>
           {displayValue}
         </div>
       </div>
       {!inputValue && (
-        <span className="text-sm text-muted-foreground mt-1 pointer-events-none shrink-0">Toca para ingresar el monto</span>
+        <span className="text-[11px] text-muted-foreground pointer-events-none shrink-0">
+          Toca para ingresar el monto
+        </span>
       )}
     </div>
   );
